@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+      {
+          "type": "pwa-node",
+          "request": "launch",
+          "name": "Run Test Debugger",
+          "runtimeExecutable": "node",
+          "runtimeArgs": [
+            "index.js"
+          ],
+          "cwd": "${fileDirname}",
+          "skipFiles": [
+              "<node_internals>/**/**",
+              "node_modules/**/**"
+          ],
+          "console": "integratedTerminal"
+      }
+  ],
+  "compounds": []
+}
