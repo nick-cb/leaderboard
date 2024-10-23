@@ -222,7 +222,19 @@ class MineSweeper {
       if (point.isMine) {
         str += "💥";
       } else {
-        str += point.adjMine + " ";
+        // str += point.adjMine + " ";
+        const colors = {
+          0: 37,
+          1: 34,
+          2: 32,
+          3: 31,
+          4: 36,
+          5: 33,
+          6: 35,
+          7: 91,
+          8: 95,
+        };
+        str += `\x1b[${colors[point.adjMine]}m${point.adjMine}\x1b[0m `;
       }
       if (i % this.cols === this.cols - 1) {
         str += "\n";
@@ -238,6 +250,7 @@ class MineSweeper {
 
 const mineSweeper = new MineSweeper(9, 9, 10);
 mineSweeper.initMinSweeper();
+mineSweeper.printBoard();
 mineSweeper.printGrid();
 
 const rl = readline.createInterface({
