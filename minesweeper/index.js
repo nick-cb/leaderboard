@@ -1,6 +1,8 @@
 const util = require("util");
 const readline = require("node:readline");
 const process = require("node:process");
+const { seeds } = require("./seed");
+const { sfc32 } = require("./utils");
 /**
  * @typedef {Object} BoardCell
  * @property {{x: number, y: number}} coordinate
@@ -64,15 +66,12 @@ class MineSweeper {
   }
 
   #putMineOnBoard() {
-    // TODO: Implement seed
-    // const seed = Date.now();
-
     for (let i = 0; i < this.mines; i++) {
       let x;
       let y;
       do {
-        x = Math.round(Math.random() * this.rows);
-        y = Math.round(Math.random() * this.cols);
+        x = Math.round(sfc32(...seeds[i].x)() * this.rows);
+        y = Math.round(sfc32(...seeds[i].y)() * this.cols);
       } while (
         this.board.find((p) => p?.coordinate?.x === x && p?.coordinate?.y === y)
       );
@@ -237,7 +236,7 @@ class MineSweeper {
   }
 }
 
-const mineSweeper = new MineSweeper(9, 9, 20);
+const mineSweeper = new MineSweeper(9, 9, 10);
 mineSweeper.initMinSweeper();
 mineSweeper.printGrid();
 
