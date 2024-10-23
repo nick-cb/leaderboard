@@ -8,6 +8,7 @@ const { sfc32 } = require("./utils");
  * @property {{x: number, y: number}} coordinate
  * @property {boolean} isMine
  * @property {number} adjMine
+ * @property {boolean} isReveal
  */
 
 /**
@@ -21,9 +22,7 @@ class MineSweeper {
   rows;
   cols;
   mines;
-  /** @type {Array<MaskCell>} board */
-  mask;
-  /** @type {Array<BoardCell>} board */
+  /** @type {Array<Array<BoardCell>>} board */
   board;
 
   /** Create a MineSweeper object
@@ -40,21 +39,9 @@ class MineSweeper {
   }
 
   #initBoard() {
-    this.board = new Array(this.rows * this.cols);
-  }
-
-  #initMask() {
-    this.mask = new Array(this.rows * this.cols);
-    for (let i = 0; i < this.cols * this.rows; i++) {
-      const x = i % this.rows;
-      const y = Math.floor(i / this.rows);
-      const cellIdx = this.board.findIndex(
-        ({ coordinate }) => coordinate.x === x && coordinate.y === y,
-      );
-      this.mask[i] = {
-        coordinate: { x, y },
-        cellIdx,
-      };
+    this.board = new Array(this.rows);
+    for (let i = 0; i < this.rows; i++) {
+      this.board[i] = new Array(this.cols);
     }
   }
 
@@ -62,7 +49,6 @@ class MineSweeper {
     this.#initBoard();
     this.#putMineOnBoard();
     this.#fillBoardWithMineAdjacentNumbers();
-    this.#initMask();
   }
 
   #putMineOnBoard() {
@@ -70,67 +56,50 @@ class MineSweeper {
       let x;
       let y;
       do {
-        x = Math.round(sfc32(...seeds[i].x)() * this.rows);
-        y = Math.round(sfc32(...seeds[i].y)() * this.cols);
+        x = Math.round(sfc32(...seeds[i].x)() * (this.rows - 1));
+        y = Math.round(sfc32(...seeds[i].y)() * (this.cols - 1));
       } while (
         this.board.find((p) => p?.coordinate?.x === x && p?.coordinate?.y === y)
       );
-      this.board[i] = { coordinate: { x, y }, isMine: true };
+      this.board[x][y] = { coordinate: { x, y }, isMine: true, adjMine: 0 };
     }
   }
 
   #fillBoardWithMineAdjacentNumbers() {
-    let lastIdx = this.mines;
-    for (let i = 0; i < this.cols * this.rows; i++) {
-      let x = i % this.rows;
-      let y = Math.floor(i / this.rows);
-      let adjMineCount = 0;
-      if (
-        this.board.find((p) => p?.coordinate?.x === x && p?.coordinate?.y === y)
-      ) {
-        continue;
-      }
-      for (let j = 0; j < this.mines; j++) {
-        const point = this.board[j];
-
-        const isTopLeft =
-          point.coordinate.y === y - 1 && point.coordinate.x === x - 1;
-        const isTop = point.coordinate.y === y - 1 && point.coordinate.x === x;
-        const isTopRight =
-          point.coordinate.y === y - 1 && point.coordinate.x === x + 1;
-
-        const isLeft = point.coordinate.y === y && point.coordinate.x === x - 1;
-        const isRight =
-          point.coordinate.y === y && point.coordinate.x === x + 1;
-
-        const isBottomLeft =
-          point.coordinate.y + 1 === y && point.coordinate.x === x - 1;
-        const isBottom =
-          point.coordinate.y + 1 === y && point.coordinate.x === x;
-        const isBottomRight =
-          point.coordinate.y + 1 === y && point.coordinate.x === x + 1;
-
-        const isAdjacent =
-          isTopLeft ||
-          isTop ||
-          isTopRight ||
-          isLeft ||
-          isRight ||
-          isBottomLeft ||
-          isBottom ||
-          isBottomRight;
-
-        if (isAdjacent && point.isMine) {
-          adjMineCount += 1;
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const tile = this.board[row][col] || {
+          coordinate: { x: col, y: row },
+          adjMine: 0,
+          isReveal: false,
+          isMine: false,
+        };
+        if (this.board[row - 1]?.[col - 1]?.isMine) {
+          tile.adjMine += 1;
         }
+        if (this.board[row - 1]?.[col]?.isMine) {
+          tile.adjMine += 1;
+        }
+        if (this.board[row - 1]?.[col + 1]?.isMine) {
+          tile.adjMine += 1;
+        }
+        if (this.board[row]?.[col - 1]?.isMine) {
+          tile.adjMine += 1;
+        }
+        if (this.board[row]?.[col + 1]?.isMine) {
+          tile.adjMine += 1;
+        }
+        if (this.board[row + 1]?.[col - 1]?.isMine) {
+          tile.adjMine += 1;
+        }
+        if (this.board[row + 1]?.[col]?.isMine) {
+          tile.adjMine += 1;
+        }
+        if (this.board[row + 1]?.[col + 1]?.isMine) {
+          tile.adjMine += 1;
+        }
+        this.board[row][col] = tile;
       }
-
-      this.board[lastIdx] = {
-        coordinate: { x, y },
-        isMine: false,
-        adjMine: adjMineCount,
-      };
-      lastIdx += 1;
     }
   }
 
@@ -148,25 +117,23 @@ class MineSweeper {
 
   /** @param {{x: number, y: number}} tile */
   revealTile({ x, y }) {
-    const cell = this.mask.find(
-      (p) => p.coordinate.x === x && p.coordinate.y === y,
-    );
+    const cell = this.board[y]?.[x];
     if (!cell || cell.isReveal) {
       return 0;
     }
-    if (this.board[cell.cellIdx].isMine) {
+    if (cell.isMine) {
       return 1;
     }
 
     cell.isReveal = true;
 
-    if (this.board[cell.cellIdx].adjMine === 0) {
+    if (cell.adjMine === 0) {
       this.revealAdjacentTile(cell);
     }
   }
 
   revealAll() {
-    for (const cell of this.mask) {
+    for (const cell of this.board) {
       cell.isReveal = true;
     }
   }
@@ -175,19 +142,49 @@ class MineSweeper {
     this.#initBoard();
   }
 
-  printGrid() {
+  printMaskedBoard() {
     let str = "";
-    for (let i = 0; i < this.cols * this.rows; i++) {
-      const x = i % this.rows;
-      const y = Math.floor(i / this.rows);
-      const point = this.mask.find(
-        ({ coordinate }) => coordinate.x === x && coordinate.y === y,
-      );
-      if (point.isReveal) {
-        if (this.board[point.cellIdx].isMine) {
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        const tile = this.board[i][j];
+        if (tile.isReveal) {
+          if (tile.isMine) {
+            str += "💥";
+          } else if (tile.adjMine) {
+            const colors = {
+              1: 34,
+              2: 32,
+              3: 31,
+              4: 36,
+              5: 33,
+              6: 35,
+              7: 91,
+              8: 95,
+            };
+            str += `\x1b[${colors[tile.adjMine]}m${tile.adjMine}\x1b[0m `;
+          } else {
+            str += "◻ ";
+          }
+        } else {
+          str += "◼ ";
+        }
+      }
+
+      str += "\n";
+    }
+    console.log(str);
+  }
+
+  printBoard() {
+    let str = "";
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        const tile = this.board[i][j];
+        if (tile.isMine) {
           str += "💥";
-        } else if (this.board[point.cellIdx].adjMine) {
+        } else {
           const colors = {
+            0: 37,
             1: 34,
             2: 32,
             3: 31,
@@ -197,49 +194,13 @@ class MineSweeper {
             7: 91,
             8: 95,
           };
-          str += `\x1b[${colors[this.board[point.cellIdx].adjMine]}m${this.board[point.cellIdx].adjMine}\x1b[0m `;
-        } else {
-          str += "◻ ";
+          str += `\x1b[${colors[tile.adjMine]}m${tile.adjMine}\x1b[0m `;
         }
-      } else {
-        str += "◼ ";
       }
-      if (i % this.cols === this.cols - 1) {
-        str += "\n";
-      }
-    }
-    console.log(str);
-  }
 
-  printBoard() {
-    let str = "";
-    for (let i = 0; i < this.cols * this.rows; i++) {
-      const x = i % this.rows;
-      const y = Math.floor(i / this.rows);
-      const point = this.board.find(
-        ({ coordinate }) => coordinate.x === x && coordinate.y === y,
-      );
-      if (point.isMine) {
-        str += "💥";
-      } else {
-        // str += point.adjMine + " ";
-        const colors = {
-          0: 37,
-          1: 34,
-          2: 32,
-          3: 31,
-          4: 36,
-          5: 33,
-          6: 35,
-          7: 91,
-          8: 95,
-        };
-        str += `\x1b[${colors[point.adjMine]}m${point.adjMine}\x1b[0m `;
-      }
-      if (i % this.cols === this.cols - 1) {
-        str += "\n";
-      }
+      str += "\n";
     }
+
     console.log(str);
   }
 
@@ -251,7 +212,7 @@ class MineSweeper {
 const mineSweeper = new MineSweeper(9, 9, 10);
 mineSweeper.initMinSweeper();
 mineSweeper.printBoard();
-mineSweeper.printGrid();
+mineSweeper.printMaskedBoard();
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -265,10 +226,10 @@ function askQuestion() {
     if (result === 1) {
       mineSweeper.printYouLost();
       mineSweeper.revealAll();
-      mineSweeper.printGrid();
+      mineSweeper.printMaskedBoard();
       process.exit();
     }
-    mineSweeper.printGrid();
+    mineSweeper.printMaskedBoard();
     askQuestion();
   });
 }
