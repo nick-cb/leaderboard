@@ -174,6 +174,11 @@ class MineSweeper {
       this.revealAdjacentTile(cell, callback);
     }
 
+    if (this.#revealedCount === this.cols * this.rows - this.mines) {
+      this.revealAll();
+      process.exit(0);
+    }
+
     return 0;
   }
 
