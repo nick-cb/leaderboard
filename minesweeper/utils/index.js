@@ -35,3 +35,11 @@ exports.sfc32 = function sfc32(a, b, c, d) {
 };
 
 const seedgen = () => (Math.random() * 2 ** 32) >>> 0;
+
+// let result = [];
+// for (let i = 0; i < 40; i++) {
+//   const x = [seedgen(), seedgen(), seedgen(), seedgen()];
+//   const y = [seedgen(), seedgen(), seedgen(), seedgen()];
+//   result.push({ x, y });
+// }
+// console.log(result)

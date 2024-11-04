@@ -7,7 +7,7 @@
           "name": "Run Test Debugger",
           "runtimeExecutable": "node",
           "runtimeArgs": [
-            "index.js"
+            "solver.js"
           ],
           "cwd": "${fileDirname}",
           "skipFiles": [
