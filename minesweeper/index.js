@@ -22,6 +22,10 @@ class MineSweeper {
   seeds;
   mineList = [];
   #revealedCount = 0;
+  startTime = 0;
+  endTime = 0;
+  isLost = false;
+  isWon = false;
 
   /** Create a MineSweeper object
    * @param {number} rows
@@ -62,7 +66,6 @@ class MineSweeper {
         this.maskedBoard[i][j] = {
           coordinate: { x: j, y: i },
           neighbors: this.#board[i][j].neighbors,
-          adjMine: 0,
           isReveal: false,
         };
       }
@@ -130,14 +133,14 @@ class MineSweeper {
 
   /** @param {MaskCell} cell */
   revealAdjacentTile({ coordinate: { x, y } }, callback) {
-    this.revealTile({ y: y - 1, x: x - 1 }, callback);
-    this.revealTile({ y: y - 1, x: x }, callback);
-    this.revealTile({ y: y - 1, x: x + 1 }, callback);
-    this.revealTile({ y: y, x: x - 1 }, callback);
-    this.revealTile({ y: y, x: x + 1 }, callback);
-    this.revealTile({ y: y + 1, x: x - 1 }, callback);
-    this.revealTile({ y: y + 1, x: x }, callback);
-    this.revealTile({ y: y + 1, x: x + 1 }, callback);
+    this.#revealTile({ y: y - 1, x: x - 1 }, callback);
+    this.#revealTile({ y: y - 1, x: x }, callback);
+    this.#revealTile({ y: y - 1, x: x + 1 }, callback);
+    this.#revealTile({ y: y, x: x - 1 }, callback);
+    this.#revealTile({ y: y, x: x + 1 }, callback);
+    this.#revealTile({ y: y + 1, x: x - 1 }, callback);
+    this.#revealTile({ y: y + 1, x: x }, callback);
+    this.#revealTile({ y: y + 1, x: x + 1 }, callback);
   }
 
   /** @param {BoardCell} cell */
@@ -157,6 +160,29 @@ class MineSweeper {
    * @param {(cell: BoardCell) => void} callback
    */
   revealTile({ x, y }, callback) {
+    if (this.startTime === 0) {
+      this.startTime = Date.now();
+    }
+
+    const cell = this.#board[y]?.[x];
+    if (!cell || cell.isReveal) {
+      return;
+    }
+
+    this.#updateGameStatusOnRevealCell(cell);
+    if (this.isFinished()) {
+      this.finishGame();
+      return;
+    }
+
+    this.#revealTile({ x, y }, callback);
+  }
+
+  /**
+   * @param {{x: number, y: number}} tile
+   * @param {(cell: BoardCell) => void} callback
+   */
+  #revealTile({ x, y }, callback) {
     const cell = this.#board[y]?.[x];
     if (!cell || cell.isReveal) {
       return 0;
@@ -167,17 +193,17 @@ class MineSweeper {
 
     cell.isReveal = true;
     this.#revealMaskedTile(cell);
-    this.#revealedCount += 1;
+    // this.#revealedCount += 1;
     callback?.(this.maskedBoard[cell.coordinate.y][cell.coordinate.x]);
 
     if (cell.adjMine === 0) {
       this.revealAdjacentTile(cell, callback);
     }
 
-    if (this.#revealedCount === this.cols * this.rows - this.mines) {
-      this.revealAll();
-      process.exit(0);
-    }
+    // if (this.#revealedCount === this.cols * this.rows - this.mines) {
+    //   this.revealAll();
+    //   process.exit(0);
+    // }
 
     return 0;
   }
@@ -271,6 +297,31 @@ class MineSweeper {
 
   printYouLost() {
     console.log("You Lost");
+  }
+
+  /** @param {BoardCell} cell */
+  #updateGameStatusOnRevealCell(cell) {
+    if (cell.isMine === true) {
+      console.log({ cell });
+    }
+    if (this.isFinished()) {
+      return;
+    }
+
+    this.#revealedCount += 1;
+    this.isLost = cell.isMine;
+    this.isWon = this.#revealedCount === this.rows * this.cols - this.mines;
+  }
+
+  isFinished() {
+    return this.isLost || this.isWon;
+  }
+
+  finishGame() {
+    if (this.endTime === 0) {
+      this.endTime = Date.now();
+    }
+    this.revealAll();
   }
 }
 

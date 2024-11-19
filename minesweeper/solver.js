@@ -1,8 +1,8 @@
 /** @typedef {import('./index.js').MineSweeper} MineSweeper */
 /** @typedef {import('./index.js').BoardCell} BoardCell */
+const { seed10, seed40 } = require("./seed.js");
 
 const { MineSweeper } = require("./index.js");
-const { seed10, seed40 } = require("./seed.js");
 
 class MinesweeperSolver {
   /** @type {MineSweeper} mineSweeper */
@@ -35,7 +35,9 @@ class MinesweeperSolver {
         this.moves.splice(index, 1);
       }
     });
-    while (this.moves.length) {
+    while (this.moves.length && !this.mineSweeper.isFinished()) {
+      console.log({len: this.moves.length})
+      this.mineSweeper.printMaskedBoard();
       for (const move of this.moves) {
         for (const neighbor of move.neighbors) {
           const cell = this.mineSweeper.maskedBoard[neighbor.y][neighbor.x];
@@ -47,14 +49,22 @@ class MinesweeperSolver {
               this.markTileAsMine(neighbor);
             }
           } else if (cell.adjMine === 0) {
+            if (cell.coordinate.x === 1 && cell.coordinate.y === 2) {
+              console.log(unRevealNeigbors)
+            }
+            console.log({unRevealNeigbors});
             for (const neighbor of unRevealNeigbors) {
-              this.marktileAsSafe(neighbor);
+              if (
+                !this.mineSweeper.maskedBoard[neighbor.y][neighbor.x].isMine
+              ) {
+                this.marktileAsSafe(neighbor);
+              }
             }
           }
         }
       }
 
-      const len = this.mines.length;
+      let len = this.mines.length;
       for (let i = 0; i < len; i++) {
         const mine = this.mines.pop();
         for (const { x, y } of mine.neighbors) {
@@ -66,11 +76,6 @@ class MinesweeperSolver {
         }
       }
     }
-    // for (let i = 0; i < this.mineSweeper.rows; i++) {
-    //   for (let j = 0; j < this.mineSweeper.cols; j++) {
-    //     this.markTile({ y: i, x: j });
-    //   }
-    // }
   }
 
   markTile({ x, y }) {
@@ -108,14 +113,14 @@ class MinesweeperSolver {
       }
     });
     this.safes.push(this.mineSweeper.maskedBoard[y][x]);
-    this.mineSweeper.printMaskedBoard();
   }
 }
 
+module.exports = { MinesweeperSolver };
+
 const mineSweeper = new MineSweeper(16, 16, 40, seed40);
 mineSweeper.initMinSweeper();
-mineSweeper.printBoard();
-mineSweeper.printMaskedBoard();
 const solver = new MinesweeperSolver(mineSweeper);
 solver.startGame();
 mineSweeper.printMaskedBoard();
+// mineSweeper.printBoard();

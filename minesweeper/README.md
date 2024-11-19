@@ -8,11 +8,22 @@
 - Safe tiles contain a number signalling how many of the 8 adjacent tile are armed
 - If player click on a `0` safe tile, all adjacent tile is revealed. If in the process another `0` tile is hit, the process is repeat.
 
-## Implementation
+## Web features
 
-```python
-# Used internally to keep track of the game tiles
-board = []
-# Used to keep track of what to show to player
-mask = []
-```
+- [ ] The game
+    - [ ] Tracking
+        - Time
+        - 3BV: The minimum number of clicks required to complete a game without using flags
+        - 3BV/s: 3BV per second
+        - Clicks
+            - Left click
+            - Right click
+            - Wasted click
+            - Chords
+        - Efficiency: 3BV/Amount of click
+    - [ ] Experience
+    - [ ] Game history
+    - [ ] Game replay
+    - [ ] Ranking
+    - [ ] Statisic
+    - [ ] Region
