@@ -301,9 +301,9 @@ class MineSweeper {
 
   /** @param {BoardCell} cell */
   #updateGameStatusOnRevealCell(cell) {
-    // if (cell.isMine === true) {
-    //   console.log({ cell });
-    // }
+    if (cell.isMine === true) {
+      console.log({ cell });
+    }
     if (this.isFinished()) {
       return;
     }

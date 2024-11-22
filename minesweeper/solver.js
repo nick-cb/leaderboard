@@ -59,74 +59,70 @@ class MinesweeperSolver {
       for (const move of movesToRemove) {
         this.removeMove(move.coordinate);
       }
-    }
-
-    if (this.moves.length) {
-      for (let i = 0; i < this.moves.length; i++) {
-        const a = this.moves[i];
-        const aUnRevealNeighbors = this.getUnRevealNeighbors(a.coordinate);
-        for (let j = i + 1; j < this.moves.length; j++) {
-          const b = this.moves[j];
-          const bUnRevealedNeighbors = this.getUnRevealNeighbors(b.coordinate);
-          if (
-            bUnRevealedNeighbors.length === 0 ||
-            aUnRevealNeighbors.length === 0
-          ) {
-            continue;
-          }
-          if (this.isSubset(bUnRevealedNeighbors, aUnRevealNeighbors)) {
-            const safeNeighbors = aUnRevealNeighbors.filter((n) => {
-              return bUnRevealedNeighbors.find(
-                (n2) => n2.x === n.x && n2.y === n.y,
-              );
-            });
-            for (const safeTile of safeNeighbors) {
-              this.tileToCheck.push(safeTile);
+      if (this.moves.length) {
+        for (let i = 0; i < this.moves.length; i++) {
+          const a = this.moves[i];
+          const aUnRevealNeighbors = this.getUnRevealNeighbors(a.coordinate);
+          for (let j = i + 1; j < this.moves.length; j++) {
+            const b = this.moves[j];
+            if (
+              !a.neighbors.find(
+                ({ x, y }) => x === b.coordinate.x && y === b.coordinate.y,
+              )
+            ) {
+              continue;
+            }
+            const bUnRevealedNeighbors = this.getUnRevealNeighbors(
+              b.coordinate,
+            );
+            if (
+              bUnRevealedNeighbors.length === 0 ||
+              aUnRevealNeighbors.length === 0
+            ) {
+              continue;
+            }
+            if (this.isSubset(bUnRevealedNeighbors, aUnRevealNeighbors)) {
+              const safeNeighbors = aUnRevealNeighbors.filter((n) => {
+                return !bUnRevealedNeighbors.find(
+                  (n2) => n2.x === n.x && n2.y === n.y,
+                );
+              });
+              if (safeNeighbors.length === a.adjMine) {
+                for (const safeTile of safeNeighbors) {
+                  this.tileToCheck.push(safeTile);
+                }
+              }
+            }
+            if (
+              this.isSubset(
+                aUnRevealNeighbors,
+                bUnRevealedNeighbors,
+                // a.coordinate.x === 1 &&
+                //   a.coordinate.y === 3 &&
+                //   b.coordinate.x === 2 &&
+                //   b.coordinate.y === 3,
+              )
+            ) {
+              const safeNeighbors = bUnRevealedNeighbors.filter((n) => {
+                return !aUnRevealNeighbors.find(
+                  (n2) => n2.x === n.x && n2.y === n.y,
+                );
+              });
+              if (safeNeighbors.length === b.adjMine) {
+                for (const safeTile of safeNeighbors) {
+                  this.tileToCheck.push(safeTile);
+                }
+              }
             }
           }
-          if (this.isSubset(aUnRevealNeighbors, bUnRevealedNeighbors)) {
-            const safeNeighbors = aUnRevealNeighbors.filter((n) => {
-              return bUnRevealedNeighbors.find(
-                (n2) => n2.x === n.x && n2.y === n.y,
-              );
-            });
-            for (const safeTile of safeNeighbors) {
-              this.tileToCheck.push(safeTile);
-            }
-          }
-          // if (
-          //   !a.neighbors.find(
-          //     (n) => n.x === b.coordinate.x && n.y === b.coordinate.y,
-          //   )
-          // ) {
-          //   continue;
-          // }
-          // const bUnRevealedNeighbors = this.getUnRevealNeighbors(b.coordinate);
-          // const isBSubsetOfA =
-          //   bUnRevealedNeighbors.length < aUnRevealNeighbors.length;
-          // const set = isBSubsetOfA ? aUnRevealNeighbors : bUnRevealedNeighbors;
-          // const subSet = isBSubsetOfA
-          //   ? bUnRevealedNeighbors
-          //   : aUnRevealNeighbors;
-          // if (subSet.length === 0) {
-          //   continue;
-          // }
-
-          // const safeNeighbors = set.filter((n) => {
-          //   return !subSet.find((n2) => n2.x === n.x && n2.y === n.y);
-          // });
-          // if (safeNeighbors.length === isBSubsetOfA ? a.adjMine : b.adjMine) {
-          //   for (const safeTile of safeNeighbors) {
-          //     this.tileToCheck.push(safeTile);
-          //   }
-          // }
         }
       }
+      console.log({
+        moves: this.moves.map((m) => m.coordinate),
+        tileToCheck: this.tileToCheck,
+      });
     }
-    console.log({
-      moves: this.moves.map((m) => m.coordinate),
-      tileToCheck: this.tileToCheck,
-    });
+
     // while (this.moves.length) {
     //   const move = this.moves.pop();
     //   this.mineSweeper.printMaskedBoard();
@@ -245,17 +241,19 @@ class MinesweeperSolver {
     }
   }
 
-  isSubset(subSet, set) {
+  isSubset(subSet, set, debug) {
     if (subSet.length > set.length) {
       return false;
     }
-    return (
-      subSet.filter((subItem) => {
-        return !set.find(
-          (setItem) => setItem.x === subItem.x && setItem.y === subItem.y,
-        );
-      }).length > 0
-    );
+    const out = subSet.filter((subItem) => {
+      return !set.find(
+        (setItem) => setItem.x === subItem.x && setItem.y === subItem.y,
+      );
+    });
+    if (debug) {
+      console.log({ out });
+    }
+    return out.length === 0;
   }
 }
 
