@@ -1,8 +1,8 @@
-/** @typedef {import('./index.js').MineSweeper} MineSweeper */
-/** @typedef {import('./index.js').BoardCell} BoardCell */
-const { seed10, seed40 } = require("./seed.js");
+/** @typedef {import('../index.js').MineSweeper} MineSweeper */
+/** @typedef {import('../index.js').BoardCell} BoardCell */
+const { seed10, seed40 } = require("../seed.js");
 
-const { MineSweeper } = require("./index.js");
+const { MineSweeper } = require("../index.js");
 
 class MinesweeperSolver {
   /** @type {MineSweeper} mineSweeper */
@@ -260,7 +260,7 @@ class MinesweeperSolver {
 module.exports = { MinesweeperSolver };
 
 const mineSweeper = new MineSweeper(16, 16, 40, seed40);
-mineSweeper.initMinSweeper();
+mineSweeper.initMineSweeper();
 const solver = new MinesweeperSolver(mineSweeper);
 solver.startGame();
 mineSweeper.printMaskedBoard();

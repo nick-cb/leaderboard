@@ -72,10 +72,38 @@ class MineSweeper {
     }
   }
 
-  initMinSweeper() {
+  initMineSweeper() {
     this.#initBoard();
     this.#putMineOnBoard();
     this.#fillBoardWithMineAdjacentNumbers();
+    this.#initMaskedBoard();
+  }
+
+  /** @param {Array<Array<number>>} board */
+  initMineSweeperFromArray(board) {
+    this.#board = new Array(this.rows);
+    for (let i = 0; i < board.length; i++) {
+      this.#board[i] = new Array(this.cols);
+      for (let j = 0; j < board.length; j++) {
+        const neighbors = [
+          { y: i - 1, x: j - 1 },
+          { y: i - 1, x: j },
+          { y: i - 1, x: j + 1 },
+          { y: i, x: j - 1 },
+          { y: i, x: j + 1 },
+          { y: i + 1, x: j - 1 },
+          { y: i + 1, x: j },
+          { y: i + 1, x: j + 1 },
+        ];
+        this.#board[i][j] = {
+          coordinate: { x: j, y: i },
+          adjMine: board[i][j],
+          isReveal: false,
+          isMine: board[i][j] === 9,
+          neighbors: neighbors,
+        };
+      }
+    }
     this.#initMaskedBoard();
   }
 
@@ -193,17 +221,11 @@ class MineSweeper {
 
     cell.isReveal = true;
     this.#revealMaskedTile(cell);
-    // this.#revealedCount += 1;
     callback?.(this.maskedBoard[cell.coordinate.y][cell.coordinate.x]);
 
     if (cell.adjMine === 0) {
       this.revealAdjacentTile(cell, callback);
     }
-
-    // if (this.#revealedCount === this.cols * this.rows - this.mines) {
-    //   this.revealAll();
-    //   process.exit(0);
-    // }
 
     return 0;
   }
