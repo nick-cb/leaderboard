@@ -15,10 +15,7 @@ async function start() {
     .then(() => {
       console.log("Connectted to database");
     })
-    .catch((error) => console.log(error))
-    .finally(() => {
-      console.log("WTF");
-    });
+    .catch((error) => console.log(error));
 
   runBot();
   // runBot();
@@ -34,7 +31,6 @@ function runBot() {
     try {
       const solver = new MinesweeperSolver(new LvngdStrategy(mineSweeper));
       const stats = await solver.startGame();
-      console.log({ stats });
       const stat = new Stats({
         userId: id,
         startTime: stats.startTime,
