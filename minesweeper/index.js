@@ -85,6 +85,18 @@ class MineSweeper {
     for (let i = 0; i < board.length; i++) {
       this.#board[i] = new Array(this.cols);
       for (let j = 0; j < board.length; j++) {
+        this.#board[i][j] = {
+          coordinate: { x: j, y: i },
+          adjMine: board[i][j],
+          isReveal: false,
+          isMine: board[i][j] === 9,
+          neighbors: [],
+        };
+      }
+    }
+
+    for (let i = 0; i < this.#board.length; i++) {
+      for (let j = 0; j < this.#board[0].length; j++) {
         const neighbors = [
           { y: i - 1, x: j - 1 },
           { y: i - 1, x: j },
@@ -95,13 +107,11 @@ class MineSweeper {
           { y: i + 1, x: j },
           { y: i + 1, x: j + 1 },
         ];
-        this.#board[i][j] = {
-          coordinate: { x: j, y: i },
-          adjMine: board[i][j],
-          isReveal: false,
-          isMine: board[i][j] === 9,
-          neighbors: neighbors,
-        };
+        for (const neighbor of neighbors) {
+          if (this.#board[neighbor.y]?.[neighbor.x]) {
+            this.#board[i][j].neighbors.push(neighbor);
+          }
+        }
       }
     }
     this.#initMaskedBoard();
@@ -344,6 +354,31 @@ class MineSweeper {
       this.endTime = Date.now();
     }
     this.revealAll();
+  }
+
+  calculate3bv() {
+    let bv3 = this.rows * this.cols;
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        const cell = this.#board[i][j];
+        if (cell.adjMine === 0 || cell.isMine) {
+          bv3 -= 1;
+        } else {
+          try {
+            const zeroMineNeigbors = cell.neighbors.filter((n) => {
+              return this.#board[n.y][n.x].adjMine === 0;
+            });
+            if (zeroMineNeigbors.length === 0) {
+              bv3 -= 1;
+            }
+          } catch (error) {
+            console.log(util.inspect(cell, { colors: true, depth: null }));
+          }
+        }
+      }
+    }
+
+    return bv3;
   }
 }
 

@@ -31,8 +31,14 @@ class MinesweeperSolverStrategy {
 
   /**
    * @typedef {Object} Stats
-   * @property {number} time
+   * @property {number} startTime
+   * @property {number} endTime
    * @property {Array<{coordinate: [number,number], type: string}>} trail
+   * @property {number} clicks
+   * @property {number} leftClicks
+   * @property {number} rightClicks
+   * @property {number} bv3
+   * @property {number} bv3PerSecond
    * @returns {Stats} stats
    */
   getStats() {
@@ -104,11 +110,16 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
   }
 
   getStats() {
+    const leftClicks = this.trail.filter((click) => click.type === "uncovered").length;
+    const bv3 = this.mineSweeper.calculate3bv();
     return {
-      time: this.endTime - this.startTime,
+      startTime: this.startTime,
+      endTime: this.endTime,
       clicks: this.trail.length,
-      leftClicks: this.trail.filter((click) => click.type === "uncovered"),
-      rightClicks: this.trail.filter((click) => click.type === "flagged"),
+      leftClicks: leftClicks,
+      rightClicks: this.trail.filter((click) => click.type === "flagged").length,
+      bv3: bv3,
+      bv3PerSecond: leftClicks / bv3,
     };
   }
 }
