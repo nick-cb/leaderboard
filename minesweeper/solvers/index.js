@@ -108,7 +108,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       time: this.endTime - this.startTime,
       clicks: this.trail.length,
       leftClicks: this.trail.filter((click) => click.type === "uncovered"),
-      rightClicks: this.trail.filter((click) => click.type === "uncovered"),
+      rightClicks: this.trail.filter((click) => click.type === "flagged"),
     };
   }
 }
