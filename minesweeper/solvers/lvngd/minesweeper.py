@@ -26,7 +26,7 @@ class Square:
 		self.constraints = constraints
 
 	def __str__(self):
-		return "{}".format(self.constant)
+		return "{}".format(self.original_constant)
 
 	def __repr__(self):
 		if self.uncovered:
@@ -52,15 +52,13 @@ class MinesweeperBoard:
 
 	def show_board(self):
 		for row in self.board:
-			for col in row:
-				print(col.original_constant,end=" ")
-			print("")
+			print(row)
 		return
 
 	def show_board2(self):
 		for row in self.board:
 			for col in row:
-				print(col.constant, end=" ")
+				print(col.constant, end=", ")
 			print("")
 		return
 
