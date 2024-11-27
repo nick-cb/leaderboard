@@ -52,7 +52,16 @@ class MinesweeperBoard:
 
 	def show_board(self):
 		for row in self.board:
-			print(row)
+			for col in row:
+				print(col.original_constant,end=" ")
+			print("")
+		return
+
+	def show_board2(self):
+		for row in self.board:
+			for col in row:
+				print(col.constant, end=" ")
+			print("")
 		return
 
 	def get_neighbors(self,x,y):

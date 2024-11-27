@@ -82,9 +82,9 @@ class MineSweeper {
   /** @param {Array<Array<number>>} board */
   initMineSweeperFromArray(board) {
     this.#board = new Array(this.rows);
-    for (let i = 0; i < board.length; i++) {
+    for (let i = 0; i < this.rows; i++) {
       this.#board[i] = new Array(this.cols);
-      for (let j = 0; j < board.length; j++) {
+      for (let j = 0; j < this.cols; j++) {
         this.#board[i][j] = {
           coordinate: { x: j, y: i },
           adjMine: board[i][j],
@@ -95,8 +95,8 @@ class MineSweeper {
       }
     }
 
-    for (let i = 0; i < this.#board.length; i++) {
-      for (let j = 0; j < this.#board[0].length; j++) {
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
         const neighbors = [
           { y: i - 1, x: j - 1 },
           { y: i - 1, x: j },
@@ -357,28 +357,39 @@ class MineSweeper {
   }
 
   calculate3bv() {
-    let bv3 = this.rows * this.cols;
+    let bv3 = 0;
+    let totalSkip = 0;
+    const visited = [];
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
-        const cell = this.#board[i][j];
-        if (cell.adjMine === 0 || cell.isMine) {
-          bv3 -= 1;
-        } else {
-          try {
-            const zeroMineNeigbors = cell.neighbors.filter((n) => {
-              return this.#board[n.y][n.x].adjMine === 0;
-            });
-            if (zeroMineNeigbors.length === 0) {
-              bv3 -= 1;
+        if (visited[i]?.[j]) {
+          continue;
+        }
+        if (this.#board[i][j].adjMine === 0) {
+          const tileToVisit = [{ x: j, y: i }];
+          bv3 += 1;
+          const visit = ({ x, y }) => {
+            if (visited[y]?.[x]) {
+              return [];
             }
-          } catch (error) {
-            console.log(util.inspect(cell, { colors: true, depth: null }));
-          }
+            if (!visited[y]) {
+              visited[y] = [];
+            }
+
+            visited[y][x] = 1;
+            totalSkip += 1;
+            if (this.#board[y][x].adjMine === 0) {
+              for (const neighbor of this.#board[y][x].neighbors) {
+                visit(neighbor);
+              }
+            }
+          };
+          visit(tileToVisit[0]);
         }
       }
     }
 
-    return bv3;
+    return this.cols * this.rows - totalSkip - this.mines + bv3;
   }
 }
 
