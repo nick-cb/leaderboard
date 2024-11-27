@@ -39,6 +39,7 @@ class MinesweeperSolverStrategy {
    * @property {number} rightClicks
    * @property {number} bv3
    * @property {number} bv3PerSecond
+   * @property {Array<Array<number>>} game
    * @returns {Stats} stats
    */
   getStats() {
@@ -51,6 +52,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
   endTime = 0;
   clicks = 0;
   trail = [];
+  game = [];
   /** @param {MineSweeper} mineSweeper */
   constructor(mineSweeper) {
     super();
@@ -105,21 +107,27 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
         rows[i][j] = parseInt(col);
       }
     }
+    this.game = rows;
     this.mineSweeper.initMineSweeperFromArray(rows);
     this.mineSweeper.printBoard();
   }
 
   getStats() {
-    const leftClicks = this.trail.filter((click) => click.type === "uncovered").length;
+    const leftClicks = this.trail.filter(
+      (click) => click.type === "uncovered",
+    ).length;
     const bv3 = this.mineSweeper.calculate3bv();
     return {
       startTime: this.startTime,
       endTime: this.endTime,
       clicks: this.trail.length,
       leftClicks: leftClicks,
-      rightClicks: this.trail.filter((click) => click.type === "flagged").length,
+      rightClicks: this.trail.filter((click) => click.type === "flagged")
+        .length,
       bv3: bv3,
       bv3PerSecond: leftClicks / bv3,
+      game: this.game,
+      trail: this.trail,
     };
   }
 }

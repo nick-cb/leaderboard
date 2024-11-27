@@ -17,15 +17,25 @@ async function start() {
     })
     .catch((error) => console.log(error));
 
-  runBot();
-  // runBot();
-  // runBot();
+  const time = (start, skip) => {
+    let str = "";
+    for (let i = start; i < 59; i += skip) {
+      if (i > start) {
+        str += ",";
+      }
+      str += i;
+    }
+    return str;
+  };
+  runBot(time(0, 3) + " * * * * *");
+  runBot(time(1, 3) + " * * * * *");
+  runBot(time(2, 3) + " * * * * *");
 }
 
-function runBot() {
+function runBot(expression) {
   const id = Date.now();
   console.log("Bot " + id + " is running");
-  cron.schedule("*/5 * * * * *", async () => {
+  cron.schedule(expression, async () => {
     console.log(`Bot ${id}: New game`);
     const mineSweeper = new MineSweeper(16, 16, 40, seed40);
     try {
@@ -41,6 +51,7 @@ function runBot() {
         rightClick: stats.rightClicks,
         bv3: stats.bv3,
         bv3PerSecond: stats.bv3PerSecond,
+        game: stats.game,
       });
 
       await stat.save();

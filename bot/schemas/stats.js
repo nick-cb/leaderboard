@@ -14,6 +14,7 @@ const StatSchema = new mongoose.Schema({
   trail: {
     type: [Trail],
   },
+  game: Array,
   clicks: Number,
   leftClick: Number,
   rightClick: Number,
