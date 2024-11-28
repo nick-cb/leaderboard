@@ -14,7 +14,14 @@ server.on("request", (req, res) => {
     if (url.pathname === "/game/new") {
       const mode = url.searchParams.get("mode");
       if (!mode) {
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
         res.end(
           JSON.stringify({
             error: "Game mode not found",
@@ -23,7 +30,14 @@ server.on("request", (req, res) => {
         return;
       }
       if (mode !== "intermediate") {
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
         res.end(
           JSON.stringify({
             error: "Invalid game mode",
@@ -36,7 +50,14 @@ server.on("request", (req, res) => {
       const minesweeper = new MineSweeper(16, 16, 40);
       games.push([id, minesweeper]);
       minesweeper.initMineSweeper();
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin":
+          "*" /* @dev First, read about security */,
+        "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+        "Access-Control-Max-Age": 2592000, // 30 days
+        /** add other headers as per requirement */
+      });
       res.end(
         JSON.stringify({
           id: id,
@@ -81,7 +102,6 @@ server.on("request", (req, res) => {
         return;
       }
       const minesweeper = game[1];
-      console.log({ coordinate });
       minesweeper.revealTile({ x: coordinate[0], y: coordinate[1] });
 
       res.writeHead(200, { "Content-Type": "application/json" });
