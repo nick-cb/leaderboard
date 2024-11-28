@@ -295,6 +295,14 @@ class MineSweeper {
     console.log(str);
   }
 
+  getMaskedBoardAsNumberArray() {
+    return this.maskedBoard.map((row) => {
+      return row.map((col) => {
+        return col.adjMine ?? "-";
+      });
+    });
+  }
+
   printBoard() {
     let str = "";
     for (let i = 0; i < this.rows; i++) {
