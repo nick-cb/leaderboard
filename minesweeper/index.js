@@ -1,6 +1,3 @@
-const util = require("util");
-const readline = require("node:readline");
-const process = require("node:process");
 const { sfc32 } = require("./utils");
 /**
  * @typedef {Object} BoardCell
