@@ -16,7 +16,6 @@ class MineSweeper {
   /** @type {Array<Array<BoardCell>>} board */
   #board;
   /** @type {Array<Array<BoardCell>>} board */
-  maskedBoard;
   seeds;
   mineList = [];
   #revealedCount = 0;
@@ -57,26 +56,10 @@ class MineSweeper {
     }
   }
 
-  #initMaskedBoard() {
-    this.maskedBoard = new Array(this.rows);
-    for (let i = 0; i < this.rows; i++) {
-      this.maskedBoard[i] = new Array(this.cols);
-      for (let j = 0; j < this.cols; j++) {
-        this.maskedBoard[i][j] = {
-          coordinate: { x: j, y: i },
-          neighbors: this.#board[i][j].neighbors,
-          isReveal: false,
-          isFlagged: false,
-        };
-      }
-    }
-  }
-
   initMineSweeper() {
     this.#initBoard();
     this.#putMineOnBoard();
     this.#fillBoardWithMineAdjacentNumbers();
-    this.#initMaskedBoard();
   }
 
   /** @param {Array<Array<number>>} board */
@@ -114,7 +97,6 @@ class MineSweeper {
         }
       }
     }
-    this.#initMaskedBoard();
   }
 
   #putMineOnBoard() {
@@ -181,18 +163,6 @@ class MineSweeper {
     this.#revealTile({ y: y + 1, x: x + 1 }, callback);
   }
 
-  /** @param {BoardCell} cell */
-  #revealMaskedTile(cell) {
-    const maskedCell = this.maskedBoard[cell.coordinate.y][cell.coordinate.x];
-    if (maskedCell.isReveal) {
-      return;
-    }
-    maskedCell.adjMine = cell.adjMine;
-    maskedCell.neighbors = cell.neighbors;
-    maskedCell.isReveal = cell.isReveal;
-    maskedCell.isMine = cell.isMine;
-  }
-
   /**
    * @param {{x: number, y: number}} tile
    * @param {(cell: BoardCell) => void} callback
@@ -230,8 +200,7 @@ class MineSweeper {
     }
 
     cell.isReveal = true;
-    this.#revealMaskedTile(cell);
-    callback?.(this.maskedBoard[cell.coordinate.y][cell.coordinate.x]);
+    callback?.(cell);
 
     if (cell.adjMine === 0) {
       this.revealAdjacentTile(cell, callback);
@@ -244,32 +213,7 @@ class MineSweeper {
     for (const row of this.#board) {
       for (const cell of row) {
         cell.isReveal = true;
-        this.#revealMaskedTile(cell);
       }
-    }
-  }
-
-  /** @param {{x: number, y: number}} tile */
-  flagMine({ x, y }) {
-    if (this.#board[y][x].isReveal) {
-      console.log(`Attempt to flag revealed tile (${x} ${y})`);
-      return;
-    }
-    this.#board[y][x].isFlagged = true;
-    this.maskedBoard[y][x].isFlagged = true;
-  }
-
-  toggleFlagMine({ x, y }) {
-    if (this.#board[y][x].isReveal) {
-      console.log(`Attempt to flag revealed tile (${x} ${y})`);
-      return;
-    }
-    if (this.#board[y][x].isFlagged) {
-      this.#board[y][x].isFlagged = false;
-      this.maskedBoard[y][x].isFlagged = false;
-    } else {
-      this.#board[y][x].isFlagged = true;
-      this.maskedBoard[y][x].isFlagged = true;
     }
   }
 
@@ -281,7 +225,7 @@ class MineSweeper {
     let str = "";
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
-        const tile = this.maskedBoard[i][j];
+        const tile = this.#board[i][j];
         const adjMine = Math.max(0, tile.adjMine);
         if (tile.isReveal) {
           if (tile.isMine) {
@@ -316,7 +260,7 @@ class MineSweeper {
   }
 
   getMaskedBoardAsNumberArray() {
-    return this.maskedBoard.map((row) => {
+    return this.#board.map((row) => {
       return row.map((col) => {
         return col.isFlagged ? "+" : (col.adjMine ?? "-");
       });

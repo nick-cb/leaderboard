@@ -9,7 +9,6 @@ const mongoose = require("mongoose");
 const { Stats } = require("./schemas/stats.js");
 
 async function start() {
-  console.log("start");
   await mongoose
     .connect("mongodb://127.0.0.1:27018/minesweeper")
     .then(() => {
