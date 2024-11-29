@@ -1,4 +1,3 @@
-const http = require("node:http");
 const { MineSweeper } = require(".");
 
 server.on("clientError", (err, socket) => {
