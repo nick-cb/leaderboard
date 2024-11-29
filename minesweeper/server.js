@@ -70,7 +70,14 @@ server.on("request", (req, res) => {
     if (/\/game\/\d+\/reveal-tile/.test(url.pathname)) {
       let coordinate = url.searchParams.get("coordinate");
       if (!coordinate) {
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
         res.end(
           JSON.stringify({
             error: "Please pass in coordinate",
@@ -80,7 +87,14 @@ server.on("request", (req, res) => {
       }
       coordinate = coordinate.split(",");
       if (isNaN(coordinate[0]) || isNaN(coordinate[1])) {
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
         res.end(
           JSON.stringify({
             error: "Invalid coordinate, the format must be <number>,<number>",
@@ -93,7 +107,14 @@ server.on("request", (req, res) => {
       const id = url.pathname.split("/")[2];
       const game = games.find(([gameId]) => id == gameId);
       if (!game) {
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
         res.end(
           JSON.stringify({
             error: "Invalid game id",
@@ -104,7 +125,89 @@ server.on("request", (req, res) => {
       const minesweeper = game[1];
       minesweeper.revealTile({ x: coordinate[0], y: coordinate[1] });
 
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin":
+          "*" /* @dev First, read about security */,
+        "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+        "Access-Control-Max-Age": 2592000, // 30 days
+        /** add other headers as per requirement */
+      });
+      res.end(
+        JSON.stringify({
+          id: id,
+          game: minesweeper.getMaskedBoardAsNumberArray(),
+        }),
+      );
+      return;
+    }
+
+    if (/\/game\/\d+\/flag-tile/.test(url.pathname)) {
+      let coordinate = url.searchParams.get("coordinate");
+      if (!coordinate) {
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
+        res.end(
+          JSON.stringify({
+            error: "Please pass in coordinate",
+          }),
+        );
+        return;
+      }
+      coordinate = coordinate.split(",");
+      if (isNaN(coordinate[0]) || isNaN(coordinate[1])) {
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
+        res.end(
+          JSON.stringify({
+            error: "Invalid coordinate, the format must be <number>,<number>",
+          }),
+        );
+        return;
+      }
+      coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
+
+      const id = url.pathname.split("/")[2];
+      const game = games.find(([gameId]) => id == gameId);
+      if (!game) {
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin":
+            "*" /* @dev First, read about security */,
+          "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+          "Access-Control-Max-Age": 2592000, // 30 days
+          /** add other headers as per requirement */
+        });
+        res.end(
+          JSON.stringify({
+            error: "Invalid game id",
+          }),
+        );
+        return;
+      }
+      const minesweeper = game[1];
+      minesweeper.toggleFlagMine({ x: coordinate[0], y: coordinate[1] });
+
+      res.writeHead(200, {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin":
+          "*" /* @dev First, read about security */,
+        "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+        "Access-Control-Max-Age": 2592000, // 30 days
+        /** add other headers as per requirement */
+      });
       res.end(
         JSON.stringify({
           id: id,

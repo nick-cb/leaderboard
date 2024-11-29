@@ -5,6 +5,7 @@ const { sfc32 } = require("./utils");
  * @property {boolean} isMine
  * @property {number} adjMine
  * @property {boolean} isReveal
+ * @property {boolean} isFlagged
  * @property {Array<{x: number, y: number}>} neighbors
  */
 
@@ -49,6 +50,7 @@ class MineSweeper {
           adjMine: 0,
           isReveal: false,
           isMine: false,
+          isFlagged: false,
           neighbors: [],
         };
       }
@@ -64,6 +66,7 @@ class MineSweeper {
           coordinate: { x: j, y: i },
           neighbors: this.#board[i][j].neighbors,
           isReveal: false,
+          isFlagged: false,
         };
       }
     }
@@ -134,7 +137,7 @@ class MineSweeper {
       );
       this.#board[y][x].coordinate = { x, y };
       this.#board[y][x].isMine = true;
-      this.#board[y][x].adjMine = 0;
+      this.#board[y][x].adjMine = 9;
       this.mineList.push(this.#board[y][x]);
     }
   }
@@ -157,7 +160,7 @@ class MineSweeper {
           if (!this.#board[y] || !this.#board[y][x]) {
             continue;
           }
-          if (this.#board[y][x].isMine) {
+          if (!tile.isMine && this.#board[y][x].isMine) {
             tile.adjMine += 1;
           }
           tile.neighbors.push({ x, y });
@@ -200,7 +203,7 @@ class MineSweeper {
     }
 
     const cell = this.#board[y]?.[x];
-    if (!cell || cell.isReveal) {
+    if (!cell || cell.isReveal || cell.isFlagged) {
       return;
     }
 
@@ -219,7 +222,7 @@ class MineSweeper {
    */
   #revealTile({ x, y }, callback) {
     const cell = this.#board[y]?.[x];
-    if (!cell || cell.isReveal) {
+    if (!cell || cell.isReveal || cell.isFlagged) {
       return 0;
     }
     if (cell.isMine) {
@@ -238,8 +241,11 @@ class MineSweeper {
   }
 
   revealAll() {
-    for (const cell of this.#board) {
-      cell.isReveal = true;
+    for (const row of this.#board) {
+      for (const cell of row) {
+        cell.isReveal = true;
+        this.#revealMaskedTile(cell);
+      }
     }
   }
 
@@ -249,8 +255,22 @@ class MineSweeper {
       console.log(`Attempt to flag revealed tile (${x} ${y})`);
       return;
     }
-    this.#board[y][x].isMine = true;
-    this.maskedBoard[y][x].isMine = true;
+    this.#board[y][x].isFlagged = true;
+    this.maskedBoard[y][x].isFlagged = true;
+  }
+
+  toggleFlagMine({ x, y }) {
+    if (this.#board[y][x].isReveal) {
+      console.log(`Attempt to flag revealed tile (${x} ${y})`);
+      return;
+    }
+    if (this.#board[y][x].isFlagged) {
+      this.#board[y][x].isFlagged = false;
+      this.maskedBoard[y][x].isFlagged = false;
+    } else {
+      this.#board[y][x].isFlagged = true;
+      this.maskedBoard[y][x].isFlagged = true;
+    }
   }
 
   resetMinSweeper() {
@@ -282,7 +302,7 @@ class MineSweeper {
             str += "◻ ";
           }
         } else {
-          if (tile.isMine) {
+          if (tile.isFlagged) {
             str += `\x1b[31m◼\x1b[0m `;
           } else {
             str += "◼ ";
@@ -298,7 +318,7 @@ class MineSweeper {
   getMaskedBoardAsNumberArray() {
     return this.maskedBoard.map((row) => {
       return row.map((col) => {
-        return col.adjMine ?? "-";
+        return col.isFlagged ? "+" : (col.adjMine ?? "-");
       });
     });
   }
@@ -338,9 +358,6 @@ class MineSweeper {
 
   /** @param {BoardCell} cell */
   #updateGameStatusOnRevealCell(cell) {
-    if (cell.isMine === true) {
-      console.log({ cell });
-    }
     if (this.isFinished()) {
       return;
     }

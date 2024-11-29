@@ -26,6 +26,7 @@ export const links: LinksFunction = () => [
 ];
 
 const queryClient = new QueryClient();
+export { queryClient };
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
