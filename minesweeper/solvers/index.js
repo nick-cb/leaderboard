@@ -81,9 +81,6 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       if (part1[0] === "(") {
         part1 = part1.substring(2);
       }
-      // } else if (part1[0] === " ") {
-      //   part1 = part1.substring(3);
-      // }
       part2 = part2.substring(0, part2.length - 1);
       part3 = part3.substring(1, part3.length - 1);
       if (part3.at(-1) === "'") {
@@ -117,6 +114,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       (click) => click.type === "uncovered",
     ).length;
     const bv3 = this.mineSweeper.calculate3bv();
+
     return {
       startTime: this.startTime,
       endTime: this.endTime,
