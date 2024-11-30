@@ -1,4 +1,5 @@
 const { sfc32 } = require("./utils");
+const score = require("./scores.json");
 /**
  * @typedef {Object} BoardCell
  * @property {{x: number, y: number}} coordinate
@@ -368,6 +369,15 @@ class MineSweeper {
 
     return this.cols * this.rows - totalSkip - this.mines + bv3;
   }
+}
+
+function calculateScore(mineSweeper, user) {
+  /* - win score
+   * - time score
+   * - efficiency score: click / 3bv
+   */
+
+  const winScore = score[0].winsScore.find((win) => win === user.winStreak);
 }
 
 exports.MineSweeper = MineSweeper;
