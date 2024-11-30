@@ -36,9 +36,8 @@ function runBot(expression) {
   console.log("Bot " + id + " is running");
   cron.schedule(expression, async () => {
     console.log(`Bot ${id}: New game`);
-    const mineSweeper = new MineSweeper(16, 16, 40, seed40);
     try {
-      const solver = new MinesweeperSolver(new LvngdStrategy(mineSweeper));
+      const solver = new MinesweeperSolver(new LvngdStrategy());
       const stats = await solver.startGame();
       const stat = new Stats({
         userId: id,

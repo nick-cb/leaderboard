@@ -13,8 +13,13 @@ class MinesweeperSolver {
   }
 
   async startGame() {
-    await this.strategy.startGame();
-    return this.strategy.getStats();
+    try {
+      await this.strategy.startGame();
+      return this.strategy.getStats();
+    } catch (error) {
+      console.log(error);
+    }
+    return 1;
   }
 }
 
@@ -105,7 +110,9 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       }
     }
     this.game = rows;
-    this.mineSweeper.initMineSweeperFromArray(rows);
+    this.mineSweeper = MineSweeper.from(rows);
+    this.mineSweeper.isWon = true;
+    this.mineSweeper.finishGame();
     this.mineSweeper.printBoard();
   }
 
