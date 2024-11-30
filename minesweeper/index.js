@@ -23,20 +23,25 @@ class MineSweeper {
   endTime = 0;
   isLost = false;
   isWon = false;
+  static #empty = Symbol();
 
   /** Create a MineSweeper object
    * @param {number} rows
    * @param {number} cols
    * @param {number} mines
-   * @param {unknown} mask
-   * @param {unknown} board
    * @param {unknown} seeds
    */
   constructor(rows, cols, mines, seeds) {
+    if (rows === MineSweeper.#empty) {
+      return;
+    }
     this.rows = rows;
     this.cols = cols;
     this.mines = mines;
     this.seeds = seeds;
+    this.#initBoard();
+    this.#putMineOnBoard();
+    this.#fillBoardWithMineAdjacentNumbers();
   }
 
   #initBoard() {
@@ -56,30 +61,34 @@ class MineSweeper {
     }
   }
 
-  initMineSweeper() {
-    this.#initBoard();
-    this.#putMineOnBoard();
-    this.#fillBoardWithMineAdjacentNumbers();
-  }
-
   /** @param {Array<Array<number>>} board */
-  initMineSweeperFromArray(board) {
-    this.#board = new Array(this.rows);
-    for (let i = 0; i < this.rows; i++) {
-      this.#board[i] = new Array(this.cols);
-      for (let j = 0; j < this.cols; j++) {
-        this.#board[i][j] = {
+  static from(board) {
+    const mineSweeper = new MineSweeper(MineSweeper.#empty);
+    mineSweeper.rows = board.length;
+    mineSweeper.cols = board[0].length;
+    mineSweeper.#board = new Array(mineSweeper.rows);
+
+    let mines = 0;
+    for (let i = 0; i < mineSweeper.rows; i++) {
+      mineSweeper.#board[i] = new Array(mineSweeper.cols);
+      for (let j = 0; j < mineSweeper.cols; j++) {
+        const isMine = board[i][j] === 9;
+        if (isMine) {
+          mines += 1;
+        }
+        mineSweeper.#board[i][j] = {
           coordinate: { x: j, y: i },
           adjMine: board[i][j],
           isReveal: false,
-          isMine: board[i][j] === 9,
+          isMine: isMine,
           neighbors: [],
         };
       }
     }
+    mineSweeper.mines = mines;
 
-    for (let i = 0; i < this.rows; i++) {
-      for (let j = 0; j < this.cols; j++) {
+    for (let i = 0; i < mineSweeper.rows; i++) {
+      for (let j = 0; j < mineSweeper.cols; j++) {
         const neighbors = [
           { y: i - 1, x: j - 1 },
           { y: i - 1, x: j },
@@ -91,12 +100,14 @@ class MineSweeper {
           { y: i + 1, x: j + 1 },
         ];
         for (const neighbor of neighbors) {
-          if (this.#board[neighbor.y]?.[neighbor.x]) {
-            this.#board[i][j].neighbors.push(neighbor);
+          if (mineSweeper.#board[neighbor.y]?.[neighbor.x]) {
+            mineSweeper.#board[i][j].neighbors.push(neighbor);
           }
         }
       }
     }
+
+    return mineSweeper;
   }
 
   #putMineOnBoard() {
