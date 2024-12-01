@@ -375,9 +375,12 @@ function calculateScore(mineSweeper, user) {
   /* - win score
    * - time score
    * - efficiency score: click / 3bv
+   * - mastery: number of wins out of 100 games
    */
 
-  const winScore = score[0].winsScore.find((win) => win === user.winStreak);
+  const winScore = score[0].wsScore[user.winStreak];
+  if (winScore) {
+  }
 }
 
 exports.MineSweeper = MineSweeper;
