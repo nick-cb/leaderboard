@@ -4,6 +4,7 @@ server.on("clientError", (err, socket) => {
   socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
 
+/** @type {Array<[number, MineSweeper]>} games */
 const games = [];
 server.on("request", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");

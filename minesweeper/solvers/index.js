@@ -13,8 +13,13 @@ class MinesweeperSolver {
   }
 
   async startGame() {
-    await this.strategy.startGame();
-    return this.strategy.getStats();
+    try {
+      await this.strategy.startGame();
+      return this.strategy.getStats();
+    } catch (error) {
+      console.log(error);
+    }
+    return 1;
   }
 }
 
@@ -81,9 +86,6 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       if (part1[0] === "(") {
         part1 = part1.substring(2);
       }
-      // } else if (part1[0] === " ") {
-      //   part1 = part1.substring(3);
-      // }
       part2 = part2.substring(0, part2.length - 1);
       part3 = part3.substring(1, part3.length - 1);
       if (part3.at(-1) === "'") {
@@ -108,7 +110,9 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       }
     }
     this.game = rows;
-    this.mineSweeper.initMineSweeperFromArray(rows);
+    this.mineSweeper = MineSweeper.from(rows);
+    this.mineSweeper.isWon = true;
+    this.mineSweeper.finishGame();
     this.mineSweeper.printBoard();
   }
 
@@ -117,6 +121,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       (click) => click.type === "uncovered",
     ).length;
     const bv3 = this.mineSweeper.calculate3bv();
+
     return {
       startTime: this.startTime,
       endTime: this.endTime,

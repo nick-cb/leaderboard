@@ -1,4 +1,5 @@
 const { sfc32 } = require("./utils");
+const score = require("./scores.json");
 /**
  * @typedef {Object} BoardCell
  * @property {{x: number, y: number}} coordinate
@@ -16,7 +17,6 @@ class MineSweeper {
   /** @type {Array<Array<BoardCell>>} board */
   #board;
   /** @type {Array<Array<BoardCell>>} board */
-  maskedBoard;
   seeds;
   mineList = [];
   #revealedCount = 0;
@@ -24,20 +24,25 @@ class MineSweeper {
   endTime = 0;
   isLost = false;
   isWon = false;
+  static #empty = Symbol();
 
   /** Create a MineSweeper object
    * @param {number} rows
    * @param {number} cols
    * @param {number} mines
-   * @param {unknown} mask
-   * @param {unknown} board
    * @param {unknown} seeds
    */
   constructor(rows, cols, mines, seeds) {
+    if (rows === MineSweeper.#empty) {
+      return;
+    }
     this.rows = rows;
     this.cols = cols;
     this.mines = mines;
     this.seeds = seeds;
+    this.#initBoard();
+    this.#putMineOnBoard();
+    this.#fillBoardWithMineAdjacentNumbers();
   }
 
   #initBoard() {
@@ -57,46 +62,34 @@ class MineSweeper {
     }
   }
 
-  #initMaskedBoard() {
-    this.maskedBoard = new Array(this.rows);
-    for (let i = 0; i < this.rows; i++) {
-      this.maskedBoard[i] = new Array(this.cols);
-      for (let j = 0; j < this.cols; j++) {
-        this.maskedBoard[i][j] = {
-          coordinate: { x: j, y: i },
-          neighbors: this.#board[i][j].neighbors,
-          isReveal: false,
-          isFlagged: false,
-        };
-      }
-    }
-  }
-
-  initMineSweeper() {
-    this.#initBoard();
-    this.#putMineOnBoard();
-    this.#fillBoardWithMineAdjacentNumbers();
-    this.#initMaskedBoard();
-  }
-
   /** @param {Array<Array<number>>} board */
-  initMineSweeperFromArray(board) {
-    this.#board = new Array(this.rows);
-    for (let i = 0; i < this.rows; i++) {
-      this.#board[i] = new Array(this.cols);
-      for (let j = 0; j < this.cols; j++) {
-        this.#board[i][j] = {
+  static from(board) {
+    const mineSweeper = new MineSweeper(MineSweeper.#empty);
+    mineSweeper.rows = board.length;
+    mineSweeper.cols = board[0].length;
+    mineSweeper.#board = new Array(mineSweeper.rows);
+
+    let mines = 0;
+    for (let i = 0; i < mineSweeper.rows; i++) {
+      mineSweeper.#board[i] = new Array(mineSweeper.cols);
+      for (let j = 0; j < mineSweeper.cols; j++) {
+        const isMine = board[i][j] === 9;
+        if (isMine) {
+          mines += 1;
+        }
+        mineSweeper.#board[i][j] = {
           coordinate: { x: j, y: i },
           adjMine: board[i][j],
           isReveal: false,
-          isMine: board[i][j] === 9,
+          isMine: isMine,
           neighbors: [],
         };
       }
     }
+    mineSweeper.mines = mines;
 
-    for (let i = 0; i < this.rows; i++) {
-      for (let j = 0; j < this.cols; j++) {
+    for (let i = 0; i < mineSweeper.rows; i++) {
+      for (let j = 0; j < mineSweeper.cols; j++) {
         const neighbors = [
           { y: i - 1, x: j - 1 },
           { y: i - 1, x: j },
@@ -108,13 +101,14 @@ class MineSweeper {
           { y: i + 1, x: j + 1 },
         ];
         for (const neighbor of neighbors) {
-          if (this.#board[neighbor.y]?.[neighbor.x]) {
-            this.#board[i][j].neighbors.push(neighbor);
+          if (mineSweeper.#board[neighbor.y]?.[neighbor.x]) {
+            mineSweeper.#board[i][j].neighbors.push(neighbor);
           }
         }
       }
     }
-    this.#initMaskedBoard();
+
+    return mineSweeper;
   }
 
   #putMineOnBoard() {
@@ -181,18 +175,6 @@ class MineSweeper {
     this.#revealTile({ y: y + 1, x: x + 1 }, callback);
   }
 
-  /** @param {BoardCell} cell */
-  #revealMaskedTile(cell) {
-    const maskedCell = this.maskedBoard[cell.coordinate.y][cell.coordinate.x];
-    if (maskedCell.isReveal) {
-      return;
-    }
-    maskedCell.adjMine = cell.adjMine;
-    maskedCell.neighbors = cell.neighbors;
-    maskedCell.isReveal = cell.isReveal;
-    maskedCell.isMine = cell.isMine;
-  }
-
   /**
    * @param {{x: number, y: number}} tile
    * @param {(cell: BoardCell) => void} callback
@@ -230,8 +212,7 @@ class MineSweeper {
     }
 
     cell.isReveal = true;
-    this.#revealMaskedTile(cell);
-    callback?.(this.maskedBoard[cell.coordinate.y][cell.coordinate.x]);
+    callback?.(cell);
 
     if (cell.adjMine === 0) {
       this.revealAdjacentTile(cell, callback);
@@ -244,32 +225,7 @@ class MineSweeper {
     for (const row of this.#board) {
       for (const cell of row) {
         cell.isReveal = true;
-        this.#revealMaskedTile(cell);
       }
-    }
-  }
-
-  /** @param {{x: number, y: number}} tile */
-  flagMine({ x, y }) {
-    if (this.#board[y][x].isReveal) {
-      console.log(`Attempt to flag revealed tile (${x} ${y})`);
-      return;
-    }
-    this.#board[y][x].isFlagged = true;
-    this.maskedBoard[y][x].isFlagged = true;
-  }
-
-  toggleFlagMine({ x, y }) {
-    if (this.#board[y][x].isReveal) {
-      console.log(`Attempt to flag revealed tile (${x} ${y})`);
-      return;
-    }
-    if (this.#board[y][x].isFlagged) {
-      this.#board[y][x].isFlagged = false;
-      this.maskedBoard[y][x].isFlagged = false;
-    } else {
-      this.#board[y][x].isFlagged = true;
-      this.maskedBoard[y][x].isFlagged = true;
     }
   }
 
@@ -281,7 +237,7 @@ class MineSweeper {
     let str = "";
     for (let i = 0; i < this.rows; i++) {
       for (let j = 0; j < this.cols; j++) {
-        const tile = this.maskedBoard[i][j];
+        const tile = this.#board[i][j];
         const adjMine = Math.max(0, tile.adjMine);
         if (tile.isReveal) {
           if (tile.isMine) {
@@ -316,7 +272,7 @@ class MineSweeper {
   }
 
   getMaskedBoardAsNumberArray() {
-    return this.maskedBoard.map((row) => {
+    return this.#board.map((row) => {
       return row.map((col) => {
         return col.isFlagged ? "+" : (col.adjMine ?? "-");
       });
@@ -415,4 +371,61 @@ class MineSweeper {
   }
 }
 
+function calculateScore(mineSweeper, user) {
+  /* - win score
+   * - time score
+   * - efficiency score: click / 3bv
+   * - mastery: number of wins out of 100 games
+   */
+
+  const winScore = score[0].wsScore[user.winStreak];
+  if (winScore) {
+  }
+}
+
 exports.MineSweeper = MineSweeper;
+// 99 seconds = 4 trophies
+/*
+Time: 99.991 sec PB
+3BV: 48
+3BV/s: 0.4800
+Clicks: 99+7
+Efficiency: 45%
+Experience: +48⭐
+Minecoins: +8🟡
+Mastery: 17
+Win streak: 1
+
+Trophies: +4+5[S107]
+
+
+Time: 103.311 sec
+3BV: 51
+3BV/s: 0.4937
+Clicks: 93+2
+Efficiency: 54%
+Experience: +51⭐
+Minecoins: +8🟡
+Honour points: +1🌟
+Mastery: 18
+Win streak: 1
+
+Trophies: 	
++1
+*/
+
+/*
+Time: 173.433 sec
+3BV: 83
+3BV/s: 0.4786
+Clicks: 129+7
+Efficiency: 61%
+Experience: +83⭐
+Minecoins: +8🟡
+Activity: +1⚡
+Mastery: 19
+Win streak: 1
+
+Trophies: 	
++1[S107]
+*/
