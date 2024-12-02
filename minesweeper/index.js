@@ -371,42 +371,6 @@ class MineSweeper {
   }
 }
 
-/** @param {MineSweeper} mineSweeper */
-function calculateScore(mineSweeper, user) {
-  /* - win score
-   * - time score
-   * - mastery: number of wins out of 100 games
-   */
-
-  let wsScore = 0;
-  for (const [key, value] of Object.entries(scores[0].wsScore)) {
-    if (value == user.winStreak) {
-      wsScore = parseInt(key);
-    }
-  }
-
-  let timeScore = 0;
-  const timeScores = Object.entries(scores[0].timeScore);
-  for (let i = 0; i < timeScores.length; i++) {
-    const [score, time] = timeScores[i];
-    const gameDuration = mineSweeper.endTime - mineSweeper.startTime;
-    if (gameDuration === time) {
-      timeScore = parseInt(score);
-    }
-    if (gameDuration > time) {
-      const [_, previousTime] = timeScores[i - 1];
-      const timeDiff = (time - previousTime) / 10;
-      const slowerBy = Math.round(gameDuration - time);
-      timeScore = score - Math.round(slowerBy / timeDiff);
-    }
-  }
-
-  const winCount = user.gameHistory.filter((game) => (game.won = true)).length;
-  const winScore = scores[0].winsScore[winCount];
-
-  return wsScore + timeScore + winScore;
-}
-
 exports.MineSweeper = MineSweeper;
 // 99 seconds = 4 trophies
 /*
