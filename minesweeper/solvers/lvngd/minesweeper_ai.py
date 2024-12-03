@@ -1,5 +1,7 @@
 import pickle
 import random
+import time
+
 from minesweeper import MinesweeperBoard,Square
 
 """
@@ -52,7 +54,7 @@ class MinesweeperSolver:
 			return
 		x,y = square
 		self.probed_squares.add(square)
-		self.path_uncovered.append((square,'uncovered'))
+		self.path_uncovered.append((square,'uncovered', time.time()))
 		current = self.get_current_square(x,y)
 		current.uncovered = True
 		if current.original_constant == 9:
@@ -272,7 +274,7 @@ class MinesweeperSolver:
 		return
 
 	def mark_square_as_mine(self,square):
-		self.path_uncovered.append((square,'flagged'))
+		self.path_uncovered.append((square,'flagged', time.time()))
 		self.num_mines_flagged += 1
 		self.ms.mines_flagged.add(square)
 		self.mark_square(square,is_mine=True)

@@ -17,8 +17,8 @@ function start() {
     return str;
   };
   runBot(time(0, 3) + " * * * * *");
-  runBot(time(1, 3) + " * * * * *");
-  runBot(time(2, 3) + " * * * * *");
+  // runBot(time(1, 3) + " * * * * *");
+  // runBot(time(2, 3) + " * * * * *");
 }
 
 function runBot(expression) {

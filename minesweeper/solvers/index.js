@@ -1,4 +1,4 @@
-const { execFile, exec } = require("child_process");
+const { exec } = require("child_process");
 const path = require("path");
 const util = require("util");
 const { MineSweeper } = require("..");
@@ -13,13 +13,8 @@ class MinesweeperSolver {
   }
 
   async startGame() {
-    try {
-      await this.strategy.startGame();
-      return this.strategy.getStats();
-    } catch (error) {
-      console.log(error);
-    }
-    return 1;
+    await this.strategy.startGame();
+    return this.strategy.getStats();
   }
 }
 
@@ -83,6 +78,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       let part1 = this.trail[i][0];
       let part2 = this.trail[i][1];
       let part3 = this.trail[i][2];
+      let part4 = this.trail[i][3];
       if (part1[0] === "(") {
         part1 = part1.substring(2);
       }
@@ -91,9 +87,13 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
       if (part3.at(-1) === "'") {
         part3 = part3.substring(0, part3.length - 1);
       }
+      if (part4.at(-1) === "'") {
+        part4 = part4.substring(0, part4.length - 1);
+      }
       this.trail[i] = {
         coordinate: [parseInt(part1), parseInt(part2)],
         type: part3,
+        timestamp: parseFloat(part4),
       };
     }
 

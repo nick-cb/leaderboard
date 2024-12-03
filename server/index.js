@@ -125,7 +125,6 @@ server.on("request", (req, res) => {
     return;
   }
 
-  console.log({method: req.method, headers: req.headers["content-type"], path: url.pathname})
   if (
     req.method === "POST" &&
     req.headers["content-type"].toLowerCase() === "application/json" &&
