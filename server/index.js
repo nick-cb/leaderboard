@@ -1,4 +1,8 @@
-const { MineSweeper } = require(".");
+const http = require("node:http");
+const { MineSweeper } = require("../minesweeper/index.js");
+const scores = require("./scores.json");
+
+const server = http.createServer();
 
 server.on("clientError", (err, socket) => {
   socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -19,6 +23,7 @@ server.on("request", (req, res) => {
     res.statusCode = 404;
     res.statusMessage = "Not found";
     res.end("Not found");
+    return;
   }
 
   const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
@@ -110,11 +115,6 @@ server.on("request", (req, res) => {
   res.statusMessage = "Not found";
   res.end("Not found");
 });
-
-const PORT = 8000;
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
 /*
  * - A socket can either be alive or destroyed depended on the "keepAlive" option
    - The "keepAlive" option is not the same as "Connection: keep-alive" header
@@ -125,37 +125,51 @@ server.listen(PORT, () => {
  */
 
 /** @param {MineSweeper} mineSweeper */
-function calculateScore(mineSweeper, user) {
+function calculateScore(user) {
   /* - win score
    * - time score
    * - mastery: number of wins out of 100 games
    */
 
-  let wsScore = 0;
+  return (
+    calculateWinStreakScore({ winStreak: user.winStreak }) +
+    calculateBestTimeScore({ bestTime: user.bestTime }) +
+    calculateMasteryScore({ winCount: user.winCount })
+  );
+}
+
+function calculateWinStreakScore({ winStreak }) {
   for (const [key, value] of Object.entries(scores[0].wsScore)) {
     if (value == user.winStreak) {
-      wsScore = parseInt(key);
+      return parseInt(key);
     }
   }
+  return 0;
+}
 
-  let timeScore = 0;
+function calculateBestTimeScore({ bestTime }) {
   const timeScores = Object.entries(scores[0].timeScore);
   for (let i = 0; i < timeScores.length; i++) {
     const [score, time] = timeScores[i];
-    const gameDuration = mineSweeper.endTime - mineSweeper.startTime;
-    if (gameDuration === time) {
-      timeScore = parseInt(score);
+    if (bestTime === time) {
+      return parseInt(score);
     }
-    if (gameDuration > time) {
+    if (bestTime > time) {
       const [_, previousTime] = timeScores[i - 1];
       const timeDiff = (time - previousTime) / 10;
-      const slowerBy = Math.round(gameDuration - time);
-      timeScore = score - Math.round(slowerBy / timeDiff);
+      const slowerBy = Math.round(bestTime - time);
+      return score - Math.round(slowerBy / timeDiff);
     }
   }
-
-  const winCount = user.gameHistory.filter((game) => (game.won = true)).length;
-  const winScore = scores[0].winsScore[winCount];
-
-  return wsScore + timeScore + winScore;
+  return 0;
 }
+
+function calculateMasteryScore({ gameHistory }) {
+  const winCount = gameHistory.filter((game) => (game.won = true)).length;
+  return scores[0].winsScore[winCount];
+}
+
+const PORT = 8000;
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
