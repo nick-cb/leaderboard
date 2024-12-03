@@ -1,6 +1,20 @@
 const http = require("node:http");
 const { MineSweeper } = require("../minesweeper/index.js");
 const scores = require("./scores.json");
+const mysql = require("mysql2/promise.js");
+
+let connection;
+
+async () => {
+  try {
+    connection = await mysql.createConnection(
+      "mysql://root:password@localhost:3306/minesweeper",
+    );
+    await connection.ping();
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const server = http.createServer();
 
@@ -107,6 +121,34 @@ server.on("request", (req, res) => {
     res.json({
       id: id,
       game: minesweeper.getMaskedBoardAsNumberArray(),
+    });
+    return;
+  }
+
+  console.log({method: req.method, headers: req.headers["content-type"], path: url.pathname})
+  if (
+    req.method === "POST" &&
+    req.headers["content-type"].toLowerCase() === "application/json" &&
+    url.pathname === "/bot/game/save"
+  ) {
+    let body;
+    req.on("data", (chunk) => {
+      if (!body) {
+        body = chunk;
+        return;
+      }
+      body += chunk;
+    });
+
+    req.on("end", () => {
+      if (!Buffer.isBuffer(body)) {
+        res.end("Invalid data type");
+        return;
+      }
+
+      const data = JSON.parse(body.toString());
+      console.log({ data });
+      res.end("OK");
     });
     return;
   }

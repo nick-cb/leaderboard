@@ -1,21 +1,11 @@
-const { MineSweeper } = require("../minesweeper/index.js");
 const cron = require("../cron/index");
-const { seed10, seed40 } = require("./seed.js");
 const {
   MinesweeperSolver,
   LvngdStrategy,
 } = require("../minesweeper/solvers/index.js");
-const mongoose = require("mongoose");
-const { Stats } = require("./schemas/stats.js");
+const http = require("http");
 
-async function start() {
-  await mongoose
-    .connect("mongodb://127.0.0.1:27018/minesweeper")
-    .then(() => {
-      console.log("Connectted to database");
-    })
-    .catch((error) => console.log(error));
-
+function start() {
   const time = (start, skip) => {
     let str = "";
     for (let i = start; i < 59; i += skip) {
@@ -39,21 +29,32 @@ function runBot(expression) {
     try {
       const solver = new MinesweeperSolver(new LvngdStrategy());
       const stats = await solver.startGame();
-      const stat = new Stats({
-        userId: id,
-        startTime: stats.startTime,
-        endTime: stats.endTime,
-        trail: stats.trail,
-        clicks: stats.clicks,
-        leftClick: stats.leftClicks,
-        rightClick: stats.rightClicks,
-        bv3: stats.bv3,
-        bv3PerSecond: stats.bv3PerSecond,
-        game: stats.game,
-      });
-
-      await stat.save();
-      console.log(`Bot ${id}: Saved game stat ${stat._id}`);
+      const body = JSON.stringify(stats);
+      const request = http.request(
+        {
+          method: "POST",
+          host: "localhost",
+          port: 8000,
+          path: "/bot/game/save",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(body),
+          },
+        },
+        (res) => {
+          console.log(`STATUS: ${res.statusCode}`);
+          console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+          res.setEncoding("utf8");
+          res.on("data", (chunk) => {
+            console.log(`BODY: ${chunk}`);
+          });
+          res.on("end", () => {
+            console.log("No more data in response.");
+          });
+        },
+      );
+      request.write(body);
+      console.log(`Bot ${id}: Saved game stat ${stats._id}`);
       console.log("\n");
     } catch (error) {
       console.log(`Bot ${id}: Stop game due to error`);

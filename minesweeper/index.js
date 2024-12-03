@@ -1,5 +1,4 @@
 const { sfc32 } = require("./utils");
-const scores = require("./scores.json");
 /**
  * @typedef {Object} BoardCell
  * @property {{x: number, y: number}} coordinate
