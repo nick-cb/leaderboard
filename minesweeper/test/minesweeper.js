@@ -11,12 +11,11 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.mines, 10);
 
     minesweeper.revealAll();
-    const board = minesweeper.getMaskedBoardAsNumberArray();
+    const board = minesweeper.getBoardAsArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
-      board.flatMap((row) => row.map((col) => col)).filter((item) => item === 9)
-        .length,
+      board.flatMap((row) => row).filter((item) => item === 9).length,
       10,
     );
   });
@@ -37,12 +36,35 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.mines, 10);
 
     minesweeper.revealAll();
-    const board = minesweeper.getMaskedBoardAsNumberArray();
+    const board = minesweeper.getBoardAsArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
-      board.flatMap((row) => row.map((col) => col)).filter((item) => item === 9)
-        .length,
+      board.flatMap((row) => row).filter((item) => item === 9).length,
+      10,
+    );
+  });
+
+  it("should initiate the instance with the from function using 1 dimension array", () => {
+    const minesweeper = MineSweeper.from({
+      rows: 8,
+      cols: 8,
+      cells: [
+        0, 0, 0, 0, 0, 1, 3, 9, 0, 0, 0, 0, 1, 3, 9, 9, 0, 0, 1, 2, 3, 9, 9, 3,
+        0, 0, 1, 9, 9, 3, 2, 1, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 1, 1, 2, 1, 1, 0,
+        0, 0, 1, 9, 2, 9, 2, 1, 0, 0, 1, 1, 2, 1, 2, 9,
+      ],
+    });
+    assert.equal(minesweeper.rows, 8);
+    assert.equal(minesweeper.cols, 8);
+    assert.equal(minesweeper.mines, 10);
+
+    minesweeper.revealAll();
+    const board = minesweeper.getBoardAsArray();
+    assert.equal(board.length, 8);
+    assert.equal(board[0].length, 8);
+    assert.equal(
+      board.flatMap((row) => row).filter((item) => item === 9).length,
       10,
     );
   });

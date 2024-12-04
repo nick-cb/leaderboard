@@ -54,6 +54,8 @@ export default function Home() {
       const data = await response.json();
       return data;
     },
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
   const game: any[] = data?.game;
   if (!data) {

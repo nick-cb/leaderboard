@@ -61,8 +61,53 @@ class MineSweeper {
     }
   }
 
-  /** @param {Array<Array<number>>} board */
+  /** @param {Array<Array<number>> | {rows:number,cols:number,cells:Array<number>}} board */
   static from(board) {
+    if (!Array.isArray(board)) {
+      const mineSweeper = new MineSweeper(MineSweeper.#empty);
+      mineSweeper.rows = board.rows;
+      mineSweeper.cols = board.cols;
+      mineSweeper.mines = 0;
+      mineSweeper.#board = new Array(mineSweeper.rows);
+      for (let i = 0; i < board.cells.length; i++) {
+        const cell = board.cells[i];
+        const y = Math.floor(i / mineSweeper.rows);
+        const x = i % mineSweeper.cols;
+        if (!mineSweeper.#board[y]) {
+          mineSweeper.#board[y] = new Array(mineSweeper.rows);
+        }
+        if (cell === 9) {
+          mineSweeper.mines += 1;
+        }
+        mineSweeper.#board[y][x] = {
+          coordinate: { y, x },
+          adjMine: cell,
+          isReveal: false,
+          isMine: cell === 9,
+          neighbors: [],
+        };
+      }
+      for (let i = 0; i < mineSweeper.rows; i++) {
+        for (let j = 0; j < mineSweeper.cols; j++) {
+          const neighbors = [
+            { y: i - 1, x: j - 1 },
+            { y: i - 1, x: j },
+            { y: i - 1, x: j + 1 },
+            { y: i, x: j - 1 },
+            { y: i, x: j + 1 },
+            { y: i + 1, x: j - 1 },
+            { y: i + 1, x: j },
+            { y: i + 1, x: j + 1 },
+          ];
+          for (const neighbor of neighbors) {
+            if (mineSweeper.#board[neighbor.y]?.[neighbor.x]) {
+              mineSweeper.#board[i][j].neighbors.push(neighbor);
+            }
+          }
+        }
+      }
+      return mineSweeper;
+    }
     const mineSweeper = new MineSweeper(MineSweeper.#empty);
     mineSweeper.rows = board.length;
     mineSweeper.cols = board[0].length;
@@ -123,11 +168,7 @@ class MineSweeper {
           (this.seeds ? sfc32(...this.seeds[i].y)() : Math.random()) *
             (this.cols - 1),
         );
-      } while (
-        this.#board.find(
-          (p) => p?.coordinate?.x === x && p?.coordinate?.y === y,
-        )
-      );
+      } while (this.#board[y][x].isMine);
       this.#board[y][x].coordinate = { x, y };
       this.#board[y][x].isMine = true;
       this.#board[y][x].adjMine = 9;
