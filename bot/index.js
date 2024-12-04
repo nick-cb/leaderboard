@@ -66,7 +66,6 @@ function runBot(botId, expression) {
         console.error(error);
         console.log("\n");
       });
-      request.on("close", () => {});
 
       request.write(body);
     } catch (error) {

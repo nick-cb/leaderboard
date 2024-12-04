@@ -202,9 +202,22 @@ server.on("request", (req, res) => {
       `).toSqlString(),
       );
       if (queryResult[0] && "insertId" in queryResult[0]) {
-        res.end(JSON.stringify({ gameId: queryResult[0].insertId }));
+        const gameId = queryResult[0].insertId;
+        res.end(JSON.stringify({ gameId }));
+        await connection.query(
+          sql(`
+          insert into trails(game_id, coordinate, type, timestamp)
+          values ${data.trail
+            .map((trail) => {
+              return `(${gameId}, '${trail.coordinate[0]},${trail.coordinate[1]}','${trail.type}','${convertDateToSqlDate(new Date(trail.timestamp))}')`;
+            })
+            .join(",")}
+        `).toSqlString(),
+        );
+
         return;
       }
+
       res.end(JSON.stringify({ error: "Failed to insert game to database" }));
     });
     return;
@@ -285,4 +298,8 @@ const sql = mysql.raw;
 const PORT = 8000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
+});
+
+process.on("beforeExit", () => {
+  connection.destroy();
 });
