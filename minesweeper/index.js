@@ -232,6 +232,17 @@ class MineSweeper {
     this.#initBoard();
   }
 
+  toggleFlagMine({ x, y }) {
+    if (this.#board[y][x].isReveal) {
+      return;
+    }
+    if (this.#board[y][x].isFlagged) {
+      this.#board[y][x].isFlagged = false;
+    } else {
+      this.#board[y][x].isFlagged = true;
+    }
+  }
+
   printMaskedBoard() {
     let str = "";
     for (let i = 0; i < this.rows; i++) {
@@ -270,10 +281,18 @@ class MineSweeper {
     console.log(str);
   }
 
+  getBoardAsArray() {
+    return this.#board.map((row) => {
+      return row.map((col) => {
+        return col.adjMine;
+      });
+    });
+  }
+
   getMaskedBoardAsNumberArray() {
     return this.#board.map((row) => {
       return row.map((col) => {
-        return col.isFlagged ? "+" : (col.adjMine ?? "-");
+        return col.isFlagged ? "+" : col.isReveal ? col.adjMine : "-";
       });
     });
   }

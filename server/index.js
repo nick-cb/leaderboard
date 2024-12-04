@@ -26,7 +26,7 @@ server.on("clientError", (err, socket) => {
 
 /** @type {Array<[number, MineSweeper]>} games */
 const games = [];
-server.on("request", (req, res) => {
+server.on("request", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");
   res.setHeader("Access-Control-Max-Age", 2592000);
@@ -49,19 +49,59 @@ server.on("request", (req, res) => {
       res.json({ error: "Game mode not found" });
       return;
     }
-    if (mode !== "intermediate") {
-      res.end({ error: "Invalid game mode" });
+    if (mode != 2) {
+      res.json({ error: "Invalid game mode" });
       return;
     }
 
-    const id = Date.now();
     const minesweeper = new MineSweeper(16, 16, 40);
-    games.push([id, minesweeper]);
-    minesweeper.initMineSweeper();
-    res.json({
-      id: id,
-      game: minesweeper.getMaskedBoardAsNumberArray(),
-    });
+    const queryResult = await connection.query(
+      sql(`
+        insert into games(user_id,
+                          start_time,
+                          end_time,
+                          click_count,
+                          left_click_count,
+                          right_click_count,
+                          bv3,
+                          bv3_per_second,
+                          result,
+                          board,
+                          game_mode,
+                          row_count,
+                          col_count,
+                          mine_count,
+                          efficiency,
+                          experience)
+        values (${null},
+                ${null},
+                ${null},
+                ${0},
+                ${0},
+                ${0},
+                ${0},
+                ${0},
+                ${null},
+                '${minesweeper.getBoardAsArray()}',
+                2,
+                ${minesweeper.rows},
+                ${minesweeper.cols},
+                ${minesweeper.mines},
+                0,
+                0);
+      `).toSqlString(),
+    );
+
+    if (queryResult[0] && "insertId" in queryResult[0]) {
+      const gameId = queryResult[0].insertId;
+      games.push([gameId, minesweeper]);
+      res.json({
+        id: gameId,
+        game: minesweeper.getMaskedBoardAsNumberArray(),
+      });
+      return;
+    }
+    res.end("error");
     return;
   }
 
@@ -119,7 +159,6 @@ server.on("request", (req, res) => {
     }
     const minesweeper = game[1];
     minesweeper.toggleFlagMine({ x: coordinate[0], y: coordinate[1] });
-
     res.json({
       id: id,
       game: minesweeper.getMaskedBoardAsNumberArray(),
@@ -148,23 +187,6 @@ server.on("request", (req, res) => {
       }
 
       const data = JSON.parse(body.toString());
-      // console.log(data);
-      // console.log(`${data.userId},
-      //           ${new Date(data.startTime).toString()},
-      //           ${new Date(data.endTime).toString()},
-      //           ${data.clicks},
-      //           ${data.leftClicks},
-      //           ${data.rightClicks},
-      //           ${data.bv3},
-      //           ${data.bv3PerSecond},
-      //           ${data.result},
-      //           ${data.board.flatMap((row) => row).join(",")},
-      //           2,
-      //           ${data.rows},
-      //           ${data.cols},
-      //           ${data.mines},
-      //           0,
-      //           0`);
       const queryResult = await connection.query(
         sql(`
         insert into games(user_id,
@@ -203,7 +225,7 @@ server.on("request", (req, res) => {
       );
       if (queryResult[0] && "insertId" in queryResult[0]) {
         const gameId = queryResult[0].insertId;
-        res.end(JSON.stringify({ gameId }));
+        res.json({ gameId });
         await connection.query(
           sql(`
           insert into trails(game_id, coordinate, type, timestamp)
@@ -218,14 +240,14 @@ server.on("request", (req, res) => {
         return;
       }
 
-      res.end(JSON.stringify({ error: "Failed to insert game to database" }));
+      res.json({ error: "Failed to insert game to database" });
     });
     return;
   }
 
   res.statusCode = 404;
   res.statusMessage = "Not found";
-  res.end({ gameId: 1 });
+  res.end("Not found");
 });
 /*
  * - A socket can either be alive or destroyed depended on the "keepAlive" option

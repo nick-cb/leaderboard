@@ -49,7 +49,7 @@ export default function Home() {
     queryKey: ["new-game"],
     queryFn: async () => {
       const url = new URL("http://localhost:8000/game/new");
-      url.searchParams.set("mode", "intermediate");
+      url.searchParams.set("mode", "2");
       const response = await fetch(url);
       const data = await response.json();
       return data;
