@@ -3,6 +3,7 @@ const { MineSweeper } = require("../minesweeper/index.js");
 const scores = require("./scores.json");
 const mysql = require("mysql2/promise.js");
 
+/** @type {mysql.Connection} connection */
 let connection;
 
 async () => {
@@ -146,7 +147,58 @@ server.on("request", (req, res) => {
       }
 
       const data = JSON.parse(body.toString());
-      console.log({ data });
+      console.log(data);
+      console.log(`${data.userId},
+                ${new Date(data.startTime).toString()},
+                ${new Date(data.endTime).toString()},
+                ${data.clicks},
+                ${data.leftClicks},
+                ${data.rightClicks},
+                ${data.bv3},
+                ${data.bv3PerSecond},
+                ${data.result},
+                ${data.board.flatMap((row) => row).join(",")},
+                2,
+                ${data.rows},
+                ${data.cols},
+                ${data.mines},
+                0,
+                0`);
+      // connection.query(sql`
+      //   insert into games(user_id,
+      //                     start_time,
+      //                     end_time,
+      //                     click_count,
+      //                     left_click_count,
+      //                     right_click_count,
+      //                     bv3,
+      //                     bv3_per_second,
+      //                     result,
+      //                     board,
+      //                     game_mode,
+      //                     row_count,
+      //                     col_count,
+      //                     mine_count,
+      //                     efficiency,
+      //                     experience)
+      //   values (${data.userId},
+      //           ${new Date(data.startTime).toString()},
+      //           ${new Date(data.endTime).toString()},
+      //           ${data.clicks},
+      //           ${data.leftClicks},
+      //           ${data.rightClicks},
+      //           ${data.bv3},
+      //           ${data.bv3PerSecond},
+      //           ${data.result},
+      //           ${data.board.flatMap((row) => row).join(",")},
+      //           2,
+      //           ${data.rows},
+      //           ${data.cols},
+      //           ${data.mines},
+      //           0,
+      //           0);
+      // `);
+
       res.end("OK");
     });
     return;
@@ -209,6 +261,8 @@ function calculateMasteryScore({ gameHistory }) {
   const winCount = gameHistory.filter((game) => (game.won = true)).length;
   return scores[0].winsScore[winCount];
 }
+
+const sql = mysql.raw;
 
 const PORT = 8000;
 server.listen(PORT, () => {

@@ -39,7 +39,7 @@ class MinesweeperSolverStrategy {
    * @property {number} rightClicks
    * @property {number} bv3
    * @property {number} bv3PerSecond
-   * @property {Array<Array<number>>} game
+   * @property {Array<Array<number>>} board
    * @returns {Stats} stats
    */
   getStats() {
@@ -52,7 +52,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
   endTime = 0;
   clicks = 0;
   trail = [];
-  game = [];
+  board = [];
   /** @param {MineSweeper} mineSweeper */
   constructor(mineSweeper) {
     super();
@@ -109,7 +109,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
         rows[i][j] = parseInt(col);
       }
     }
-    this.game = rows;
+    this.board = rows;
     this.mineSweeper = MineSweeper.from(rows);
     this.mineSweeper.isWon = true;
     this.mineSweeper.finishGame();
@@ -131,8 +131,12 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
         .length,
       bv3: bv3,
       bv3PerSecond: leftClicks / bv3,
-      game: this.game,
+      board: this.board,
       trail: this.trail,
+      rows: this.mineSweeper.rows,
+      cols: this.mineSweeper.cols,
+      mines: this.mineSweeper.mines,
+      result: this.mineSweeper.isWon ? 1 : 0,
     };
   }
 }
