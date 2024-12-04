@@ -4,6 +4,7 @@ const {
   LvngdStrategy,
 } = require("../minesweeper/solvers/index.js");
 const http = require("http");
+const util = require("util");
 
 function start() {
   const time = (start, skip) => {
@@ -16,19 +17,19 @@ function start() {
     }
     return str;
   };
-  runBot(time(0, 3) + " * * * * *");
+  runBot(1, time(0, 3) + " * * * * *");
   // runBot(time(1, 3) + " * * * * *");
   // runBot(time(2, 3) + " * * * * *");
 }
 
-function runBot(expression) {
-  const id = Date.now();
-  console.log("Bot " + id + " is running");
+function runBot(botId, expression) {
+  console.log("Bot " + botId + " is running");
   cron.schedule(expression, async () => {
-    console.log(`Bot ${id}: New game`);
+    console.log(`Bot ${botId}: New game`);
     try {
       const solver = new MinesweeperSolver(new LvngdStrategy());
       const stats = await solver.startGame();
+      stats.userId = botId;
       const body = JSON.stringify(stats);
       const request = http.request(
         {
@@ -42,23 +43,35 @@ function runBot(expression) {
           },
         },
         (res) => {
-          console.log(`STATUS: ${res.statusCode}`);
-          console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
-          res.setEncoding("utf8");
+          let resBody;
           res.on("data", (chunk) => {
-            console.log(`BODY: ${chunk}`);
+            if (!resBody) {
+              resBody = chunk;
+              return;
+            }
+            resBody += chunk;
           });
           res.on("end", () => {
-            console.log("No more data in response.");
+            const data = JSON.parse(resBody.toString());
+            if ("error" in data) {
+              throw new Error(data.error);
+            }
+            console.log(`Bot ${botId}: Saved game stat ${data.gameId}`);
+            console.log("\n");
           });
         },
       );
+      request.on("error", (error) => {
+        console.error(`Bot ${botId}: Stop game due to error`);
+        console.error(error);
+        console.log("\n");
+      });
+      request.on("close", () => {});
+
       request.write(body);
-      console.log(`Bot ${id}: Saved game stat ${stats._id}`);
-      console.log("\n");
     } catch (error) {
-      console.log(`Bot ${id}: Stop game due to error`);
-      console.log(error);
+      console.error(`Bot ${botId}: Stop game due to error`);
+      console.error(error);
       console.log("\n");
     }
   });
