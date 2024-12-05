@@ -146,8 +146,20 @@ class GameController {
   async revealTile(gameId, { x, y }) {
     const minesweeper = await this.getGameFromPoolOrFromDatabase(gameId);
     const tiles = minesweeper.revealTile({ x, y });
-    await connection.query(
-      sql(`
+    console.log(tiles);
+    if (tiles.length) {
+      console.log(`
+        update cells
+        set is_revealed=${true}
+        where game_id=${gameId}
+        and ${tiles
+          .map((tile) => {
+            return `(x=${tile.coordinate.x} and y=${tile.coordinate.y})`;
+          })
+          .join(" or ")}
+      `);
+      await connection.query(
+        sql(`
         update cells
         set is_revealed=${true}
         where game_id=${gameId}
@@ -157,7 +169,8 @@ class GameController {
           })
           .join(" or ")}
       `).toSqlString(),
-    );
+      );
+    }
     return minesweeper;
   }
 

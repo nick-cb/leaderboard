@@ -68,7 +68,7 @@ server.on("request", async (req, res) => {
 
     res.json({
       id: id,
-      game: game.getMaskedBoardAsNumberArray(),
+      board: game.getMaskedBoardAsNumberArray(),
     });
     return;
   }
@@ -96,7 +96,7 @@ server.on("request", async (req, res) => {
 
     res.json({
       id: id,
-      game: game.getMaskedBoardAsNumberArray(),
+      board: game.getMaskedBoardAsNumberArray(),
     });
     return;
   }
@@ -142,7 +142,7 @@ server.on("request", async (req, res) => {
     }
     id = parseInt(id);
     const game = await controller.getGameFromPoolOrFromDatabase(id);
-    res.json({ gameId: id, board: game.getBoardAsConstantArray() });
+    res.json({ gameId: id, board: game.getMaskedBoardAsNumberArray() });
     return;
   }
 
