@@ -2,57 +2,47 @@ const http = require("node:http");
 const { MineSweeper } = require("../minesweeper/index.js");
 const scores = require("./scores.json");
 const mysql = require("mysql2/promise.js");
+const { GameController, connection } = require("./gameController.js");
 
 /** @type {mysql.Connection} connection */
-let connection;
-(async () => {
-  try {
-    connection = await mysql.createConnection(
-      "mysql://root:@localhost:3306/minesweeper",
-    );
-    await connection.ping();
-    console.log("connected to database!\n\n");
-  } catch (error) {
-    console.log(error);
-  }
-})();
-
-/** @type {Array<[number, MineSweeper]>} games */
-let gamePools = [];
-async function getGameFromPoolOrFromDatabase(gameId) {
-  let game = gamePools.find((g) => g[0] === gameId);
-  if (game) {
-    return game[1];
-  }
-  const [gameRows, _] = await connection.query(
-    sql(`select row_count, col_count from games where ID=${id}`).toSqlString(),
-  );
-  game = gameRows[0];
-  if (!game) {
-    return null;
-  }
-  const [cellRows, __] = await connection.query(
-    sql(
-      `select constant from cells where game_id=${id} order by x,y `,
-    ).toSqlString(),
-  );
-  const mineSweeper = MineSweeper.from({
-    rows: game.row_count,
-    cols: game.col_count,
-    cells: cellRows.map((cell) => cell.constant),
-  });
-
-  gamePools.push([gameId, mineSweeper]);
-  return mineSweeper;
-}
 
 const server = http.createServer();
 server.on("clientError", (err, socket) => {
   socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
 
-/** @type {Array<[number, MineSweeper]>} games */
-const games = [];
+const controller = new GameController();
+/** @type {Array<[number, MineSweeper]>} gamePool */
+let gamePool = [];
+// async function getGameFromPoolOrFromDatabase(gameId) {
+//   let [_, game] = gamePool.find((g) => g[0] === gameId) || [];
+//   if (game) {
+//     return game;
+//   }
+//   const [gameRows, __] = await connection.query(
+//     sql(
+//       `select row_count, col_count from games where ID=${gameId}`,
+//     ).toSqlString(),
+//   );
+//   game = gameRows[0];
+//   if (!game) {
+//     return null;
+//   }
+//   const [cellRows, ___] = await connection.query(
+//     sql(
+//       `select constant from cells where game_id=${gameId} order by x,y `,
+//     ).toSqlString(),
+//   );
+//   game = MineSweeper.from({
+//     rows: game.row_count,
+//     cols: game.col_count,
+//     cells: cellRows.map((cell) => cell.constant),
+//   });
+
+//   gamePool.push([gameId, game]);
+//   return game;
+// }
+
 server.on("request", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");
@@ -81,54 +71,11 @@ server.on("request", async (req, res) => {
       return;
     }
 
-    const minesweeper = new MineSweeper(16, 16, 40);
-    const queryResult = await connection.query(
-      sql(`
-        insert into games(user_id,
-                          start_time,
-                          end_time,
-                          click_count,
-                          left_click_count,
-                          right_click_count,
-                          bv3,
-                          bv3_per_second,
-                          result,
-                          board,
-                          game_mode,
-                          row_count,
-                          col_count,
-                          mine_count,
-                          efficiency,
-                          experience)
-        values (${null},
-                ${null},
-                ${null},
-                ${0},
-                ${0},
-                ${0},
-                ${0},
-                ${0},
-                ${null},
-                '${minesweeper.getBoardAsArray()}',
-                2,
-                ${minesweeper.rows},
-                ${minesweeper.cols},
-                ${minesweeper.mines},
-                0,
-                0);
-      `).toSqlString(),
-    );
-
-    if (queryResult[0] && "insertId" in queryResult[0]) {
-      const gameId = queryResult[0].insertId;
-      games.push([gameId, minesweeper]);
-      res.json({
-        id: gameId,
-        game: minesweeper.getMaskedBoardAsNumberArray(),
-      });
-      return;
-    }
-    res.end("error");
+    const [gameId, minesweeper] = await controller.newGame({ mode });
+    res.json({
+      id: gameId,
+      game: minesweeper.getMaskedBoardAsNumberArray(),
+    });
     return;
   }
 
@@ -146,17 +93,15 @@ server.on("request", async (req, res) => {
       return;
     }
     coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
-
-    const minesweeper = await getGameFromPoolOrFromDatabase(parseInt(id));
-    if (!minesweeper) {
-      res.json({ error: "Game not found" });
-      return;
-    }
-    minesweeper.revealTile({ x: coordinate[0], y: coordinate[1] });
+    const id = url.pathname.split("/")[2];
+    const game = await controller.revealTile(parseInt(id), {
+      x: coordinate[0],
+      y: coordinate[1],
+    });
 
     res.json({
       id: id,
-      game: minesweeper.getMaskedBoardAsNumberArray(),
+      game: game.getMaskedBoardAsNumberArray(),
     });
     return;
   }
@@ -177,16 +122,14 @@ server.on("request", async (req, res) => {
     coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
 
     const id = url.pathname.split("/")[2];
-    const minesweeper = await getGameFromPoolOrFromDatabase(parseInt(id));
-    if (!minesweeper) {
-      res.json({ error: "Game not found" });
-      return;
-    }
+    const game = await controller.toggleFlagMine(parseInt(id), {
+      x: coordinate[0],
+      y: coordinate[1],
+    });
 
-    minesweeper.toggleFlagMine({ x: coordinate[0], y: coordinate[1] });
     res.json({
       id: id,
-      game: minesweeper.getMaskedBoardAsNumberArray(),
+      game: game.getMaskedBoardAsNumberArray(),
     });
     return;
   }
@@ -212,59 +155,11 @@ server.on("request", async (req, res) => {
       }
 
       const data = JSON.parse(body.toString());
-      const queryResult = await connection.query(
-        sql(`
-        insert into games(user_id,
-                          start_time,
-                          end_time,
-                          click_count,
-                          left_click_count,
-                          right_click_count,
-                          bv3,
-                          bv3_per_second,
-                          result,
-                          board,
-                          game_mode,
-                          row_count,
-                          col_count,
-                          mine_count,
-                          efficiency,
-                          experience)
-        values (${data.userId},
-                '${convertDateToSqlDate(new Date(data.startTime))}',
-                '${convertDateToSqlDate(new Date(data.endTime))}',
-                ${data.clicks},
-                ${data.leftClicks},
-                ${data.rightClicks},
-                ${data.bv3},
-                ${data.bv3PerSecond},
-                ${data.result},
-                '${data.board.flatMap((row) => row).join(",")}',
-                2,
-                ${data.rows},
-                ${data.cols},
-                ${data.mines},
-                0,
-                0);
-      `).toSqlString(),
-      );
-      if (queryResult[0] && "insertId" in queryResult[0]) {
-        const gameId = queryResult[0].insertId;
-        await connection.query(
-          sql(`
-          insert into cells(game_id, x, y, is_revealed, is_flagged, constant, timestamp)
-          values ${data.trail
-            .map((trail) => {
-              const x = trail.coordinate[0];
-              const y = trail.coordinate[1];
-              return `(${gameId}, ${x},${y},${trail.type === "uncovered"}, ${trail.type === "flagged"},${data.board[y][x]},'${convertDateToSqlDate(new Date(trail.timestamp))}')`;
-            })
-            .join(",")}
-        `).toSqlString(),
-        );
-
-        res.json({ gameId });
-        return;
+      try {
+        const result = await controller.newGameFromBot(data);
+        res.json(result);
+      } catch (error) {
+        res.json({ error: "Failed to insert game to database" });
       }
 
       res.json({ error: "Failed to insert game to database" });
@@ -279,12 +174,8 @@ server.on("request", async (req, res) => {
       return;
     }
     id = parseInt(id);
-    const mineSweeper = await getGameFromPoolOrFromDatabase(id);
-    if (!mineSweeper) {
-      res.json({ error: "Game not found" });
-      return;
-    }
-    res.json({ gameId: id, board: mineSweeper.getBoardAsArray() });
+    const game = await controller.getGameFromPoolOrFromDatabase(id);
+    res.json({ gameId: id, board: game.getBoardAsConstantArray() });
     return;
   }
 
@@ -292,6 +183,7 @@ server.on("request", async (req, res) => {
   res.statusMessage = "Not found";
   res.end("Not found");
 });
+
 /*
  * - A socket can either be alive or destroyed depended on the "keepAlive" option
    - The "keepAlive" option is not the same as "Connection: keep-alive" header

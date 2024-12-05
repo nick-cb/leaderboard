@@ -206,14 +206,16 @@ class MineSweeper {
 
   /** @param {MaskCell} cell */
   revealAdjacentTile({ coordinate: { x, y } }, callback) {
-    this.#revealTile({ y: y - 1, x: x - 1 }, callback);
-    this.#revealTile({ y: y - 1, x: x }, callback);
-    this.#revealTile({ y: y - 1, x: x + 1 }, callback);
-    this.#revealTile({ y: y, x: x - 1 }, callback);
-    this.#revealTile({ y: y, x: x + 1 }, callback);
-    this.#revealTile({ y: y + 1, x: x - 1 }, callback);
-    this.#revealTile({ y: y + 1, x: x }, callback);
-    this.#revealTile({ y: y + 1, x: x + 1 }, callback);
+    const tiles = [];
+    tiles.push(...this.#revealTile({ y: y - 1, x: x - 1 }, callback));
+    tiles.push(...this.#revealTile({ y: y - 1, x: x }, callback));
+    tiles.push(...this.#revealTile({ y: y - 1, x: x + 1 }, callback));
+    tiles.push(...this.#revealTile({ y: y, x: x - 1 }, callback));
+    tiles.push(...this.#revealTile({ y: y, x: x + 1 }, callback));
+    tiles.push(...this.#revealTile({ y: y + 1, x: x - 1 }, callback));
+    tiles.push(...this.#revealTile({ y: y + 1, x: x }, callback));
+    tiles.push(...this.#revealTile({ y: y + 1, x: x + 1 }, callback));
+    return tiles;
   }
 
   /**
@@ -227,16 +229,16 @@ class MineSweeper {
 
     const cell = this.#board[y]?.[x];
     if (!cell || cell.isReveal || cell.isFlagged) {
-      return;
+      return [];
     }
 
     this.#updateGameStatusOnRevealCell(cell);
     if (this.isFinished()) {
       this.finishGame();
-      return;
+      return [];
     }
 
-    this.#revealTile({ x, y }, callback);
+    return this.#revealTile({ x, y }, callback);
   }
 
   /**
@@ -246,20 +248,20 @@ class MineSweeper {
   #revealTile({ x, y }, callback) {
     const cell = this.#board[y]?.[x];
     if (!cell || cell.isReveal || cell.isFlagged) {
-      return 0;
+      return [cell];
     }
     if (cell.isMine) {
-      return 1;
+      return [cell];
     }
 
     cell.isReveal = true;
     callback?.(cell);
 
     if (cell.adjMine === 0) {
-      this.revealAdjacentTile(cell, callback);
+      return [cell, ...this.revealAdjacentTile(cell, callback)];
     }
 
-    return 0;
+    return [cell];
   }
 
   revealAll() {
@@ -323,7 +325,7 @@ class MineSweeper {
     console.log(str);
   }
 
-  getBoardAsArray() {
+  getBoardAsConstantArray() {
     return this.#board.map((row) => {
       return row.map((col) => {
         return col.adjMine;

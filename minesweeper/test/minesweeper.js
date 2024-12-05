@@ -11,7 +11,7 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.mines, 10);
 
     minesweeper.revealAll();
-    const board = minesweeper.getBoardAsArray();
+    const board = minesweeper.getBoardAsConstantArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
@@ -36,7 +36,7 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.mines, 10);
 
     minesweeper.revealAll();
-    const board = minesweeper.getBoardAsArray();
+    const board = minesweeper.getBoardAsConstantArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
@@ -60,7 +60,7 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.mines, 10);
 
     minesweeper.revealAll();
-    const board = minesweeper.getBoardAsArray();
+    const board = minesweeper.getBoardAsConstantArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
