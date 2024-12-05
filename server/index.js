@@ -225,18 +225,20 @@ server.on("request", async (req, res) => {
       );
       if (queryResult[0] && "insertId" in queryResult[0]) {
         const gameId = queryResult[0].insertId;
-        res.json({ gameId });
         await connection.query(
           sql(`
-          insert into trails(game_id, coordinate, type, timestamp)
+          insert into cells(game_id, x, y, is_revealed, is_flagged, constant, timestamp)
           values ${data.trail
             .map((trail) => {
-              return `(${gameId}, '${trail.coordinate[0]},${trail.coordinate[1]}','${trail.type}','${convertDateToSqlDate(new Date(trail.timestamp))}')`;
+              const x = trail.coordinate[0];
+              const y = trail.coordinate[1];
+              return `(${gameId}, ${x},${y},${trail.type === "uncovered"}, ${trail.type === "flagged"},${data.board[y][x]},'${convertDateToSqlDate(new Date(trail.timestamp))}')`;
             })
             .join(",")}
         `).toSqlString(),
         );
 
+        res.json({ gameId });
         return;
       }
 

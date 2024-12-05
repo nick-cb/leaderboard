@@ -108,6 +108,7 @@ class MineSweeper {
       }
       return mineSweeper;
     }
+
     const mineSweeper = new MineSweeper(MineSweeper.#empty);
     mineSweeper.rows = board.length;
     mineSweeper.cols = board[0].length;
