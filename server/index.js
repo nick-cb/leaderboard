@@ -247,6 +247,37 @@ server.on("request", async (req, res) => {
     return;
   }
 
+  if (/\/game\/\d+/.test(url.pathname)) {
+    let id = url.pathname.split("/")[2];
+    if (!id) {
+      res.json({ error: "Game not found" });
+      return;
+    }
+    id = parseInt(id);
+    const [gameRows, _] = await connection.query(
+      sql(
+        `select row_count, col_count from games where ID=${id}`,
+      ).toSqlString(),
+    );
+    const game = gameRows[0];
+    if (!game) {
+      res.json({ error: "Game not found" });
+      return;
+    }
+    const [cellRows, __] = await connection.query(
+      sql(
+        `select constant from cells where game_id=${id} order by x,y `,
+      ).toSqlString(),
+    );
+    const mineSweeper = MineSweeper.from({
+      cols: game.col_count,
+      rows: game.row_count,
+      cells: cellRows.map((cell) => cell.constant),
+    });
+    res.json({ gameId: id, board: mineSweeper.getBoardAsArray() });
+    return;
+  }
+
   res.statusCode = 404;
   res.statusMessage = "Not found";
   res.end("Not found");
