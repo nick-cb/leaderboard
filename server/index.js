@@ -5,7 +5,6 @@ const mysql = require("mysql2/promise.js");
 
 /** @type {mysql.Connection} connection */
 let connection;
-
 (async () => {
   try {
     connection = await mysql.createConnection(
@@ -18,8 +17,36 @@ let connection;
   }
 })();
 
-const server = http.createServer();
+/** @type {Array<[number, MineSweeper]>} games */
+let gamePools = [];
+async function getGameFromPoolOrFromDatabase(gameId) {
+  let game = gamePools.find((g) => g[0] === gameId);
+  if (game) {
+    return game[1];
+  }
+  const [gameRows, _] = await connection.query(
+    sql(`select row_count, col_count from games where ID=${id}`).toSqlString(),
+  );
+  game = gameRows[0];
+  if (!game) {
+    return null;
+  }
+  const [cellRows, __] = await connection.query(
+    sql(
+      `select constant from cells where game_id=${id} order by x,y `,
+    ).toSqlString(),
+  );
+  const mineSweeper = MineSweeper.from({
+    rows: game.row_count,
+    cols: game.col_count,
+    cells: cellRows.map((cell) => cell.constant),
+  });
 
+  gamePools.push([gameId, mineSweeper]);
+  return mineSweeper;
+}
+
+const server = http.createServer();
 server.on("clientError", (err, socket) => {
   socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
@@ -120,13 +147,11 @@ server.on("request", async (req, res) => {
     }
     coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
 
-    const id = url.pathname.split("/")[2];
-    const game = games.find(([gameId]) => id == gameId);
-    if (!game) {
-      res.json({ error: "Invalid game id" });
+    const minesweeper = await getGameFromPoolOrFromDatabase(parseInt(id));
+    if (!minesweeper) {
+      res.json({ error: "Game not found" });
       return;
     }
-    const minesweeper = game[1];
     minesweeper.revealTile({ x: coordinate[0], y: coordinate[1] });
 
     res.json({
@@ -152,12 +177,12 @@ server.on("request", async (req, res) => {
     coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
 
     const id = url.pathname.split("/")[2];
-    const game = games.find(([gameId]) => id == gameId);
-    if (!game) {
-      res.json({ error: "Invalid game id" });
+    const minesweeper = await getGameFromPoolOrFromDatabase(parseInt(id));
+    if (!minesweeper) {
+      res.json({ error: "Game not found" });
       return;
     }
-    const minesweeper = game[1];
+
     minesweeper.toggleFlagMine({ x: coordinate[0], y: coordinate[1] });
     res.json({
       id: id,
@@ -254,26 +279,11 @@ server.on("request", async (req, res) => {
       return;
     }
     id = parseInt(id);
-    const [gameRows, _] = await connection.query(
-      sql(
-        `select row_count, col_count from games where ID=${id}`,
-      ).toSqlString(),
-    );
-    const game = gameRows[0];
-    if (!game) {
+    const mineSweeper = await getGameFromPoolOrFromDatabase(id);
+    if (!mineSweeper) {
       res.json({ error: "Game not found" });
       return;
     }
-    const [cellRows, __] = await connection.query(
-      sql(
-        `select constant from cells where game_id=${id} order by x,y `,
-      ).toSqlString(),
-    );
-    const mineSweeper = MineSweeper.from({
-      cols: game.col_count,
-      rows: game.row_count,
-      cells: cellRows.map((cell) => cell.constant),
-    });
     res.json({ gameId: id, board: mineSweeper.getBoardAsArray() });
     return;
   }
