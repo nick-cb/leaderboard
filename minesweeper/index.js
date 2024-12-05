@@ -248,7 +248,7 @@ class MineSweeper {
   #revealTile({ x, y }, callback) {
     const cell = this.#board[y]?.[x];
     if (!cell || cell.isReveal || cell.isFlagged) {
-      return [cell];
+      return [];
     }
     if (cell.isMine) {
       return [cell];

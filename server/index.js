@@ -4,45 +4,12 @@ const scores = require("./scores.json");
 const mysql = require("mysql2/promise.js");
 const { GameController, connection } = require("./gameController.js");
 
-/** @type {mysql.Connection} connection */
-
 const server = http.createServer();
 server.on("clientError", (err, socket) => {
   socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
 
 const controller = new GameController();
-/** @type {Array<[number, MineSweeper]>} gamePool */
-let gamePool = [];
-// async function getGameFromPoolOrFromDatabase(gameId) {
-//   let [_, game] = gamePool.find((g) => g[0] === gameId) || [];
-//   if (game) {
-//     return game;
-//   }
-//   const [gameRows, __] = await connection.query(
-//     sql(
-//       `select row_count, col_count from games where ID=${gameId}`,
-//     ).toSqlString(),
-//   );
-//   game = gameRows[0];
-//   if (!game) {
-//     return null;
-//   }
-//   const [cellRows, ___] = await connection.query(
-//     sql(
-//       `select constant from cells where game_id=${gameId} order by x,y `,
-//     ).toSqlString(),
-//   );
-//   game = MineSweeper.from({
-//     rows: game.row_count,
-//     cols: game.col_count,
-//     cells: cellRows.map((cell) => cell.constant),
-//   });
-
-//   gamePool.push([gameId, game]);
-//   return game;
-// }
-
 server.on("request", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");

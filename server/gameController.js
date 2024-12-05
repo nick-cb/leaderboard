@@ -1,6 +1,7 @@
 const mysql = require("mysql2/promise.js");
 const { MineSweeper } = require("../minesweeper");
 
+/** @type {mysql.Connection} connection */
 let connection;
 (async () => {
   try {
@@ -145,6 +146,18 @@ class GameController {
   async revealTile(gameId, { x, y }) {
     const minesweeper = await this.getGameFromPoolOrFromDatabase(gameId);
     const tiles = minesweeper.revealTile({ x, y });
+    await connection.query(
+      sql(`
+        update cells
+        set is_revealed=${true}
+        where game_id=${gameId}
+        and ${tiles
+          .map((tile) => {
+            return `(x=${tile.coordinate.x} and y=${tile.coordinate.y})`;
+          })
+          .join(" or ")}
+      `).toSqlString(),
+    );
     return minesweeper;
   }
 
