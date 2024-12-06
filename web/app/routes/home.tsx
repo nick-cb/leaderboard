@@ -1,7 +1,5 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import type { Route } from "./+types/home";
-import { useState } from "react";
-import { queryClient } from "~/root";
 import { useNavigate } from "react-router";
 
 export function meta({}: Route.MetaArgs) {

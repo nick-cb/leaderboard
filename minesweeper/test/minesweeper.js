@@ -45,7 +45,7 @@ describe("minesweeper test", () => {
     );
   });
 
-  it("should initiate the instance with the from function using 1 dimension array", () => {
+  it("should initiate the instance with the from function using 1 dimension array of number", () => {
     const minesweeper = MineSweeper.from({
       rows: 8,
       cols: 8,
@@ -54,6 +54,45 @@ describe("minesweeper test", () => {
         0, 0, 1, 9, 9, 3, 2, 1, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 1, 1, 2, 1, 1, 0,
         0, 0, 1, 9, 2, 9, 2, 1, 0, 0, 1, 1, 2, 1, 2, 9,
       ],
+    });
+    assert.equal(minesweeper.rows, 8);
+    assert.equal(minesweeper.cols, 8);
+    assert.equal(minesweeper.mines, 10);
+
+    minesweeper.revealAll();
+    const board = minesweeper.getBoardAsConstantArray();
+    assert.equal(board.length, 8);
+    assert.equal(board[0].length, 8);
+    assert.equal(
+      board.flatMap((row) => row).filter((item) => item === 9).length,
+      10,
+    );
+  });
+
+  it("should initiate the instance with the from function using 1 dimension array of board cell", () => {
+    const numbers = [
+      0, 0, 0, 0, 0, 1, 3, 9, 0, 0, 0, 0, 1, 3, 9, 9, 0, 0, 1, 2, 3, 9, 9, 3, 0,
+      0, 1, 9, 9, 3, 2, 1, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 1, 1, 2, 1, 1, 0, 0, 0,
+      1, 9, 2, 9, 2, 1, 0, 0, 1, 1, 2, 1, 2, 9,
+    ];
+    const rows = 8;
+    const cols = 8;
+    const cells = numbers.map((n, i) => {
+      const y = Math.floor(i / rows);
+      const x = i % cols;
+      return {
+        coordinate: { x, y },
+        adjMine: n,
+        isReveal: false,
+        isMine: false,
+        isFlagged: false,
+        neighbors: [],
+      };
+    });
+    const minesweeper = MineSweeper.from({
+      rows,
+      cols,
+      cells: cells,
     });
     assert.equal(minesweeper.rows, 8);
     assert.equal(minesweeper.cols, 8);

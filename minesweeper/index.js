@@ -61,7 +61,7 @@ class MineSweeper {
     }
   }
 
-  /** @param {Array<Array<number>> | {rows:number,cols:number,cells:Array<number>}} board */
+  /** @param {Array<Array<number>> | {rows:number,cols:number,cells:Array<number | BoardCell>}} board */
   static from(board) {
     if (!Array.isArray(board)) {
       const mineSweeper = new MineSweeper(MineSweeper.#empty);
@@ -71,21 +71,39 @@ class MineSweeper {
       mineSweeper.#board = new Array(mineSweeper.rows);
       for (let i = 0; i < board.cells.length; i++) {
         const cell = board.cells[i];
-        const y = Math.floor(i / mineSweeper.rows);
-        const x = i % mineSweeper.cols;
-        if (!mineSweeper.#board[y]) {
-          mineSweeper.#board[y] = new Array(mineSweeper.rows);
+        if (typeof cell === "number") {
+          const y = Math.floor(i / mineSweeper.rows);
+          if (!mineSweeper.#board[y]) {
+            mineSweeper.#board[y] = new Array(mineSweeper.rows);
+          }
+          const x = i % mineSweeper.cols;
+          mineSweeper.#board[y][x] = {
+            coordinate: { y, x },
+            adjMine: cell,
+            isReveal: false,
+            isMine: cell === 9,
+            neighbors: [],
+          };
+          if (cell === 9) {
+            mineSweeper.mines += 1;
+          }
+        } else {
+          const y = cell.coordinate.y;
+          const x = cell.coordinate.x;
+          if (!mineSweeper.#board[y]) {
+            mineSweeper.#board[y] = new Array(mineSweeper.rows);
+          }
+          mineSweeper.#board[y][x] = {
+            coordinate: { y, x },
+            adjMine: cell.adjMine,
+            isReveal: cell.isReveal,
+            isMine: cell.isMine,
+            neighbors: [],
+          };
+          if (cell.adjMine === 9) {
+            mineSweeper.mines += 1;
+          }
         }
-        if (cell === 9) {
-          mineSweeper.mines += 1;
-        }
-        mineSweeper.#board[y][x] = {
-          coordinate: { y, x },
-          adjMine: cell,
-          isReveal: false,
-          isMine: cell === 9,
-          neighbors: [],
-        };
       }
       for (let i = 0; i < mineSweeper.rows; i++) {
         for (let j = 0; j < mineSweeper.cols; j++) {
@@ -295,7 +313,7 @@ class MineSweeper {
         const adjMine = Math.max(0, tile.adjMine);
         if (tile.isReveal) {
           if (tile.isMine) {
-            str += "💥";
+            str += "💣";
           } else if (adjMine) {
             const colors = {
               1: 34,

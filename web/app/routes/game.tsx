@@ -54,7 +54,7 @@ export default function Game({ params }: any) {
     return <div>There is no game here</div>;
   }
 
-  function click(event: React.MouseEvent<HTMLDivElement>) {
+  function handleClick(event: React.MouseEvent<HTMLDivElement>) {
     const coordinate = event.currentTarget.dataset["coordinate"];
     revealTileMutation.mutate({
       gameId: gameId,
@@ -81,7 +81,7 @@ export default function Game({ params }: any) {
                 <div
                   key={colNumber}
                   data-coordinate={`${colNumber},${rowNumber}`}
-                  onClick={click}
+                  onClick={handleClick}
                   onContextMenu={handleContextMenu}
                   className={"w-8 h-8 border border-black text-center"}
                   style={{

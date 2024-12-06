@@ -198,18 +198,36 @@ class GameController {
 
     const [cellRows, ___] = await connection.query(
       sql(
-        `select constant from cells where game_id=${gameId} order by x,y `,
+        `select constant, x, y, is_flagged, is_revealed from cells where game_id=${gameId} order by x,y `,
       ).toSqlString(),
     );
     game = MineSweeper.from({
       rows: game.row_count,
       cols: game.col_count,
-      cells: cellRows.map((cell) => cell.constant),
+      cells: cellRows.map((cell) => ({
+        coordinate: { x: cell.x, y: cell.y },
+        adjMine: cell.constant,
+        isMine: cell.constant === 9,
+        isFlagged: cell.is_flagged,
+        isRevealed: cell.isRevealed,
+      })),
     });
 
     this.#gamePool.push([gameId, game]);
     return game;
   }
+}
+
+/** @param {Date} date */
+function convertDateToSqlDate(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const dom = date.getDate();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const second = date.getSeconds();
+
+  return [year, month, dom].join("-") + " " + [hour, minute, second].join(":");
 }
 
 const sql = mysql.raw;

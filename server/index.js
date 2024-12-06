@@ -205,20 +205,6 @@ function calculateMasteryScore({ gameHistory }) {
   return scores[0].winsScore[winCount];
 }
 
-/** @param {Date} date */
-function convertDateToSqlDate(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const dom = date.getDate();
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const second = date.getSeconds();
-
-  return [year, month, dom].join("-") + " " + [hour, minute, second].join(":");
-}
-
-const sql = mysql.raw;
-
 const PORT = 8000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
