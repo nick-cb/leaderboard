@@ -254,7 +254,7 @@ class MineSweeper {
     this.#updateGameStatusOnRevealCell(cell);
     if (this.isFinished()) {
       this.finishGame();
-      return [];
+      return this.#board.flatMap((row) => row);
     }
 
     return this.#revealTile({ x, y }, callback);

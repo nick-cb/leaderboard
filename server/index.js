@@ -1,15 +1,14 @@
 const http = require("node:http");
 const { MineSweeper } = require("../minesweeper/index.js");
 const scores = require("./scores.json");
-const mysql = require("mysql2/promise.js");
-const { GameController, connection } = require("./gameController.js");
+const { connection } = require("./gameController.js");
+const controller = require("./gameController.js");
 
 const server = http.createServer();
 server.on("clientError", (err, socket) => {
   socket.end("HTTP/1.1 400 Bad Request\r\n\r\n");
 });
 
-const controller = new GameController();
 server.on("request", async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");

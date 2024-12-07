@@ -15,19 +15,18 @@ let connection;
   }
 })();
 
-class GameController {
-  /** @type {Array<[gameId, MineSweeper]>} gamePools */
-  #gamePool = [];
+/** @type {Array<[gameId, MineSweeper]>} gamePools */
+const gamePool = [];
 
-  /**
-   * @param {number} mode
-   * @returns {Promise<[number, MineSweeper]>} result
-   */
-  async newGame({ mode }) {
-    const minesweeper = new MineSweeper(16, 16, 40);
+/**
+ * @param {number} mode
+ * @returns {Promise<[number, MineSweeper]>} result
+ */
+async function newGame({ mode }) {
+  const minesweeper = new MineSweeper(16, 16, 40);
 
-    const queryResult = await connection.query(
-      sql(`
+  const queryResult = await connection.query(
+    sql(`
         insert into games(user_id,
                           start_time,
                           end_time,
@@ -61,11 +60,11 @@ class GameController {
                 0,
                 0);
       `).toSqlString(),
-    );
-    if (queryResult[0] && "insertId" in queryResult[0]) {
-      const gameId = queryResult[0].insertId;
-      await connection.query(
-        sql(`
+  );
+  if (queryResult[0] && "insertId" in queryResult[0]) {
+    const gameId = queryResult[0].insertId;
+    await connection.query(
+      sql(`
           insert into cells(game_id, x, y, is_revealed, is_flagged, constant, timestamp)
           values ${minesweeper
             .getBoardAsConstantArray()
@@ -76,17 +75,17 @@ class GameController {
             })
             .join(",")}
         `).toSqlString(),
-      );
-      this.#gamePool.push([gameId, minesweeper]);
-      return [gameId, minesweeper];
-    }
-
-    throw new Error("Failed to create game");
+    );
+    gamePool.push([gameId, minesweeper]);
+    return [gameId, minesweeper];
   }
 
-  async newGameFromBot({ data }) {
-    const queryResult = await connection.query(
-      sql(`
+  throw new Error("Failed to create game");
+}
+
+async function newGameFromBot({ data }) {
+  const queryResult = await connection.query(
+    sql(`
         insert into games(user_id,
                           start_time,
                           end_time,
@@ -120,12 +119,12 @@ class GameController {
                 0,
                 0);
       `).toSqlString(),
-    );
+  );
 
-    if (queryResult[0] && "insertId" in queryResult[0]) {
-      const gameId = queryResult[0].insertId;
-      await connection.query(
-        sql(`
+  if (queryResult[0] && "insertId" in queryResult[0]) {
+    const gameId = queryResult[0].insertId;
+    await connection.query(
+      sql(`
           insert into cells(game_id, x, y, is_revealed, is_flagged, constant, timestamp)
           values ${data.trail
             .map((trail) => {
@@ -135,20 +134,20 @@ class GameController {
             })
             .join(",")}
         `).toSqlString(),
-      );
+    );
 
-      return { gameId };
-    }
-
-    throw new Error("Failed to insert game to database");
+    return { gameId };
   }
 
-  async revealTile(gameId, { x, y }) {
-    const minesweeper = await this.getGameFromPoolOrFromDatabase(gameId);
-    const tiles = minesweeper.revealTile({ x, y });
-    if (tiles.length) {
-      await connection.query(
-        sql(`
+  throw new Error("Failed to insert game to database");
+}
+
+async function revealTile(gameId, { x, y }) {
+  const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
+  const tiles = minesweeper.revealTile({ x, y });
+  if (tiles.length) {
+    await connection.query(
+      sql(`
         update cells
         set is_revealed=${true}
         where game_id=${gameId}
@@ -158,64 +157,63 @@ class GameController {
           })
           .join(" or ")}
       `).toSqlString(),
-      );
-    }
-    return minesweeper;
+    );
   }
+  return minesweeper;
+}
 
-  async toggleFlagMine(gameId, { x, y }) {
-    const minesweeper = await this.getGameFromPoolOrFromDatabase(gameId);
-    const tile = minesweeper.toggleFlagMine({ x, y });
-    if (tile) {
-      await connection.query(
-        sql(`
+async function toggleFlagMine(gameId, { x, y }) {
+  const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
+  const tile = minesweeper.toggleFlagMine({ x, y });
+  if (tile) {
+    await connection.query(
+      sql(`
         update cells
         set is_flagged=${true}
         where game_id=${gameId}
         and (x=${tile.coordinate.x} and y=${tile.coordinate.y})
       `).toSqlString(),
-      );
-    }
-    return minesweeper;
+    );
   }
+  return minesweeper;
+}
 
-  async getGameFromPoolOrFromDatabase(gameId) {
-    let [_, game] = this.#gamePool.find((g) => g[0] === gameId) || [];
-    if (game) {
-      return game;
-    }
-
-    const [gameRows, __] = await connection.query(
-      sql(
-        `select row_count, col_count from games where ID=${gameId}`,
-      ).toSqlString(),
-    );
-    game = gameRows[0];
-    if (!game) {
-      return null;
-    }
-
-    const [cellRows, ___] = await connection.query(
-      sql(
-        `select constant, x, y, is_flagged, is_revealed from cells where game_id=${gameId} order by x,y `,
-      ).toSqlString(),
-    );
-
-    game = MineSweeper.from({
-      rows: game.row_count,
-      cols: game.col_count,
-      cells: cellRows.map((cell) => ({
-        coordinate: { x: cell.x, y: cell.y },
-        adjMine: cell.constant,
-        isMine: cell.constant === 9,
-        isFlagged: !!parseInt(cell.is_flagged.toString()),
-        isReveal: !!parseInt(cell.is_revealed.toString()),
-      })),
-    });
-
-    this.#gamePool.push([gameId, game]);
+async function getGameFromPoolOrFromDatabase(gameId) {
+  let [_, game] = gamePool.find((g) => g[0] === gameId) || [];
+  if (game) {
     return game;
   }
+
+  const [gameRows, __] = await connection.query(
+    sql(
+      `select row_count, col_count from games where ID=${gameId}`,
+    ).toSqlString(),
+  );
+  game = gameRows[0];
+  if (!game) {
+    return null;
+  }
+
+  const [cellRows, ___] = await connection.query(
+    sql(
+      `select constant, x, y, is_flagged, is_revealed from cells where game_id=${gameId} order by x,y `,
+    ).toSqlString(),
+  );
+
+  game = MineSweeper.from({
+    rows: game.row_count,
+    cols: game.col_count,
+    cells: cellRows.map((cell) => ({
+      coordinate: { x: cell.x, y: cell.y },
+      adjMine: cell.constant,
+      isMine: cell.constant === 9,
+      isFlagged: !!parseInt(cell.is_flagged.toString()),
+      isReveal: !!parseInt(cell.is_revealed.toString()),
+    })),
+  });
+
+  gamePool.push([gameId, game]);
+  return game;
 }
 
 /** @param {Date} date */
@@ -232,4 +230,11 @@ function convertDateToSqlDate(date) {
 
 const sql = mysql.raw;
 
-module.exports = { GameController, connection };
+module.exports = {
+  connection,
+  newGame,
+  newGameFromBot,
+  revealTile,
+  toggleFlagMine,
+  getGameFromPoolOrFromDatabase,
+};
