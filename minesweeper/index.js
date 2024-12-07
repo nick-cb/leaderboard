@@ -97,6 +97,7 @@ class MineSweeper {
             coordinate: { y, x },
             adjMine: cell.adjMine,
             isReveal: cell.isReveal,
+            isFlagged: cell.isFlagged,
             isMine: cell.isMine,
             neighbors: [],
           };
@@ -295,14 +296,16 @@ class MineSweeper {
   }
 
   toggleFlagMine({ x, y }) {
-    if (this.#board[y][x].isReveal) {
-      return;
+    const cell = this.#board[y][x];
+    if (cell.isReveal) {
+      return null;
     }
-    if (this.#board[y][x].isFlagged) {
-      this.#board[y][x].isFlagged = false;
+    if (cell.isFlagged) {
+      cell.isFlagged = false;
     } else {
-      this.#board[y][x].isFlagged = true;
+      cell.isFlagged = true;
     }
+    return cell;
   }
 
   printMaskedBoard() {

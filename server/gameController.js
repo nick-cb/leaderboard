@@ -146,18 +146,7 @@ class GameController {
   async revealTile(gameId, { x, y }) {
     const minesweeper = await this.getGameFromPoolOrFromDatabase(gameId);
     const tiles = minesweeper.revealTile({ x, y });
-    console.log(tiles);
     if (tiles.length) {
-      console.log(`
-        update cells
-        set is_revealed=${true}
-        where game_id=${gameId}
-        and ${tiles
-          .map((tile) => {
-            return `(x=${tile.coordinate.x} and y=${tile.coordinate.y})`;
-          })
-          .join(" or ")}
-      `);
       await connection.query(
         sql(`
         update cells
@@ -176,7 +165,17 @@ class GameController {
 
   async toggleFlagMine(gameId, { x, y }) {
     const minesweeper = await this.getGameFromPoolOrFromDatabase(gameId);
-    minesweeper.toggleFlagMine({ x, y });
+    const tile = minesweeper.toggleFlagMine({ x, y });
+    if (tile) {
+      await connection.query(
+        sql(`
+        update cells
+        set is_flagged=${true}
+        where game_id=${gameId}
+        and (x=${tile.coordinate.x} and y=${tile.coordinate.y})
+      `).toSqlString(),
+      );
+    }
     return minesweeper;
   }
 
@@ -201,6 +200,7 @@ class GameController {
         `select constant, x, y, is_flagged, is_revealed from cells where game_id=${gameId} order by x,y `,
       ).toSqlString(),
     );
+
     game = MineSweeper.from({
       rows: game.row_count,
       cols: game.col_count,
@@ -208,8 +208,8 @@ class GameController {
         coordinate: { x: cell.x, y: cell.y },
         adjMine: cell.constant,
         isMine: cell.constant === 9,
-        isFlagged: cell.is_flagged,
-        isRevealed: cell.isRevealed,
+        isFlagged: !!parseInt(cell.is_flagged.toString()),
+        isReveal: !!parseInt(cell.is_revealed.toString()),
       })),
     });
 

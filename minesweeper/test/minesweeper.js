@@ -83,7 +83,7 @@ describe("minesweeper test", () => {
       return {
         coordinate: { x, y },
         adjMine: n,
-        isReveal: false,
+        isReveal: i === 0,
         isMine: false,
         isFlagged: false,
         neighbors: [],
@@ -97,9 +97,12 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.rows, 8);
     assert.equal(minesweeper.cols, 8);
     assert.equal(minesweeper.mines, 10);
+    let board = minesweeper.getMaskedBoardAsNumberArray();
+    assert.equal(board[0][0], 0);
+    assert.equal(board[0][1], '-');
 
     minesweeper.revealAll();
-    const board = minesweeper.getBoardAsConstantArray();
+    board = minesweeper.getBoardAsConstantArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
