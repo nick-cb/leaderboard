@@ -228,6 +228,51 @@ function convertDateToSqlDate(date) {
   return [year, month, dom].join("-") + " " + [hour, minute, second].join(":");
 }
 
+/** @param {MineSweeper} mineSweeper */
+function calculateScore(user) {
+  /* - win score
+   * - time score
+   * - mastery: number of wins out of 100 games
+   */
+
+  return (
+    calculateWinStreakScore({ winStreak: user.winStreak }) +
+    calculateBestTimeScore({ bestTime: user.bestTime }) +
+    calculateMasteryScore({ winCount: user.winCount })
+  );
+}
+
+function calculateWinStreakScore({ winStreak }) {
+  for (const [key, value] of Object.entries(scores[0].wsScore)) {
+    if (value == user.winStreak) {
+      return parseInt(key);
+    }
+  }
+  return 0;
+}
+
+function calculateBestTimeScore({ bestTime }) {
+  const timeScores = Object.entries(scores[0].timeScore);
+  for (let i = 0; i < timeScores.length; i++) {
+    const [score, time] = timeScores[i];
+    if (bestTime === time) {
+      return parseInt(score);
+    }
+    if (bestTime > time) {
+      const [_, previousTime] = timeScores[i - 1];
+      const timeDiff = (time - previousTime) / 10;
+      const slowerBy = Math.round(bestTime - time);
+      return score - Math.round(slowerBy / timeDiff);
+    }
+  }
+  return 0;
+}
+
+function calculateMasteryScore({ gameHistory }) {
+  const winCount = gameHistory.filter((game) => (game.won = true)).length;
+  return scores[0].winsScore[winCount];
+}
+
 const sql = mysql.raw;
 
 module.exports = {
