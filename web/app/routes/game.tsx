@@ -16,7 +16,7 @@ export default function Game({ params }: any) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game"], data);
+      queryClient.setQueryData(["download-game", gameId], data);
     },
   });
 
@@ -33,12 +33,12 @@ export default function Game({ params }: any) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game"], data);
+      queryClient.setQueryData(["download-game", gameId], data);
     },
   });
 
   const { data } = useQuery({
-    queryKey: ["download-game"],
+    queryKey: ["download-game", gameId],
     queryFn: async () => {
       const url = new URL(`http://localhost:8000/game/${gameId}`);
       url.searchParams.set("mode", "2");
