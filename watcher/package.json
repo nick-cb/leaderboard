@@ -2,5 +2,8 @@
   "name": "watcher",
   "bin": {
     "watch": "./bin/watch.js"
+  },
+  "dependencies": {
+    "@types/node": "^22.10.1"
   }
 }

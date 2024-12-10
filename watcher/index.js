@@ -16,6 +16,7 @@ function watch(args) {
     childProcess.kill();
     childProcess = fork(script);
   });
+  return childProcess;
 }
 
 module.exports = { watch };
