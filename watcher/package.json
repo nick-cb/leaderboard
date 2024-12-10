@@ -1,0 +1,6 @@
+{
+  "name": "watcher",
+  "bin": {
+    "watch": "./bin/watch.js"
+  }
+}
