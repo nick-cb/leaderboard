@@ -1,17 +1,18 @@
 const fs = require("fs");
-const util = require('util');
+const { fork } = require("child_process");
 
-const modules = Object.keys(require.cache).filter(
-  (k) => !k.includes("node_modules"),
-);
-
-console.log(modules);
-function watchFile(filePath) {
-  fs.watchFile(filePath, () => {
-    console.log(`File ${filePath} has changes`);
-  });
+const args = process.argv;
+let script = args[2];
+if (!script && fs.existsSync("./index.js")) {
+  script = "index.js";
 }
+const cwd = process.cwd();
 
-for (const module of modules) {
-  watchFile(module);
-}
+let childProcess = fork(script);
+fs.watch(cwd, { recursive: true }, (event, filename) => {
+  if (filename.includes("node_modules")) {
+    return;
+  }
+  childProcess.kill();
+  childProcess = fork(script);
+});

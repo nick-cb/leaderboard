@@ -1,5 +1,10 @@
 {
+  "scripts": {
+    "dev": "nodemon",
+    "dev:watch": "node watch.js index.js"
+  },
 	"dependencies": {
-		"mysql2": "^3.11.5"
+		"mysql2": "^3.11.5",
+		"nodemon": "^3.1.7"
 	}
 }
