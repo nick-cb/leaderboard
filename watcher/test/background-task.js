@@ -11,23 +11,15 @@ describe("watcher background task test", () => {
       subprocessPid = msg;
     });
     setTimeout(() => {
-      console.log(subprocessPid);
-      const ps = spawn("ps", ["-A", "-o", "ppid,pid"]);
-      ps.stdout.on("data", (msg) => {
-        if (Buffer.isBuffer(msg) && subprocessPid) {
-          console.log(
-            msg.includes(childProcess.pid),
-            // .toString()
-            // .split("\n")
-            // .filter((line) => line.includes(subprocessPid.toString())),
-            // .map((line) => line.split("   "))
-            // .filter(([ppid]) => ppid.includes(subprocessPid)),
-          );
-        }
-      });
       console.log("kill child process");
       childProcess.kill();
-      // done();
-    }, 10000);
+      const ps = spawn("ps", ["-A", "-o", "ppid,pid"]);
+      ps.stdout.on("data", (msg) => {
+        if (Buffer.isBuffer(msg) && subprocessPid.pid) {
+          console.log({subprocessPid})
+          console.log("include " + subprocessPid.pid + ": " + msg.toString().includes(subprocessPid.pid));
+        }
+      });
+    }, 1000);
   });
 });
