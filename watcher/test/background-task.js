@@ -28,7 +28,7 @@ describe("watcher background task test", () => {
     });
 
     childProcess.on("message", (msg) => {
-      subprocessPid = msg;
+      subprocessPid = msg.pid;
     });
 
     setTimeout(() => {
@@ -46,8 +46,9 @@ describe("watcher background task test", () => {
       ps.stdout.on("end", () => {
         assert.equal(typeof data === "string", true);
         assert.equal(typeof childProcessPid === "number", true);
-        console.log(data.includes(childProcessPid), childProcessPid)
         assert.equal(data.includes(childProcessPid), false);
+        // console.log(data, subprocessPid)
+        assert.equal(data.includes(subprocessPid), true);
         done();
       });
     }, 3000);
