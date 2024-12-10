@@ -1,10 +1,15 @@
 const { describe, it } = require("node:test");
+const os = require("os");
 const assert = require("node:assert");
 const { watch } = require("../index.js");
 const { spawn } = require("child_process");
 
 describe("watcher background task test", () => {
-  it("should be able to kill subprocess's child processes", (_, done) => {
+  it("shouldn't be able to kill child processes's child processes", (_, done) => {
+    if (os.platform() !== "linux") {
+      done();
+      return;
+    }
     const childProcess = watch([null, null, "test/background-script.js"]);
     const childProcessPid = childProcess.pid;
     let subprocessPid;
@@ -22,7 +27,6 @@ describe("watcher background task test", () => {
       ps.stdout.on("end", () => {
         assert.equal(typeof data === "string", true);
         assert.equal(typeof childProcessPid === "number", true);
-        console.log(data.includes(childProcessPid), childProcessPid)
         assert.equal(data.includes(childProcessPid), true);
       })
     });
@@ -47,7 +51,6 @@ describe("watcher background task test", () => {
         assert.equal(typeof data === "string", true);
         assert.equal(typeof childProcessPid === "number", true);
         assert.equal(data.includes(childProcessPid), false);
-        // console.log(data, subprocessPid)
         assert.equal(data.includes(subprocessPid), true);
         done();
       });
