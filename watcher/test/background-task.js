@@ -1,16 +1,14 @@
 const { describe, it } = require("node:test");
-const util = require("node:util");
-const os = require("os");
 const assert = require("node:assert");
-const { watch } = require("../index.js");
+const { watch, kill } = require("../index.js");
 const { spawn } = require("child_process");
+const psTree = require("pstree.remy");
 
 describe("watcher background task test", () => {
   it("shouldn't be able to kill child processes's child processes", (_, done) => {
     const childProcess = watch([null, null, "test/background-script.js"]);
     childProcess.on("spawn", async () => {
       const pidList = await getPidList();
-      assert.equal(typeof pidList === "string", true);
       assert.equal(typeof childProcess.pid === "number", true);
       assert.equal(pidList.includes(childProcess.pid), true);
     });
@@ -23,15 +21,18 @@ describe("watcher background task test", () => {
       }
     });
 
-    setTimeout(() => {
-      console.log("killed child process");
-      childProcess.kill();
+    setTimeout(async () => {
+      const pidList = await getPidList();
+      assert.equal(pidList.includes(childProcessSubProcessPid), true);
+      kill(childProcess.pid);
       childProcess.on("exit", async () => {
+        psTree(childProcess.pid, (err, pids) => {
+          console.log({ pids });
+        });
         const pidList = await getPidList();
-        assert.equal(typeof pidList === "string", true);
         assert.equal(typeof childProcess.pid === "number", true);
         assert.equal(pidList.includes(childProcess.pid), false);
-        assert.equal(pidList.includes(childProcessSubProcessPid), true);
+        assert.equal(pidList.includes(childProcessSubProcessPid), false);
         done();
       });
     }, 3000);
