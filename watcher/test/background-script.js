@@ -1,19 +1,19 @@
-const { spawn } = require("node:child_process");
-
-const ls = spawn("sleep", ["60"]);
+const { fork, spawn } = require("child_process");
 
 if (process.send) {
-  process.send({ pid: ls.pid });
+  process.send({ pid: process.pid });
 }
 
-ls.stdout.on("data", (data) => {
-  console.log(`stdout: ${data}`);
-});
-
-ls.stderr.on("data", (data) => {
-  console.error(`stderr: ${data}`);
-});
-
-ls.on("close", (code) => {
-  console.log(`child process exited with code ${code}`);
-});
+spawn(
+  'sh',
+  [
+    '-c',
+    `node -e "
+      console.log(process.pid, 'is alive')
+      setTimeout(() => {
+        console.log(process.pid, 'stop')
+      }, 10000);
+    "`
+  ],
+  {stdio: ['inherit', 'inherit', 'inherit']}
+)
