@@ -6,10 +6,6 @@ const { spawn } = require("child_process");
 
 describe("watcher background task test", () => {
   it("shouldn't be able to kill child processes's child processes", (_, done) => {
-    if (os.platform() !== "linux") {
-      done();
-      return;
-    }
     const childProcess = watch([null, null, "test/background-script.js"]);
     const childProcessPid = childProcess.pid;
     let subprocessPid;
@@ -22,21 +18,18 @@ describe("watcher background task test", () => {
           data = chunk;
           return;
         }
-        data+=chunk;
+        data += chunk;
       });
       ps.stdout.on("end", () => {
+        data = data.toString();
         assert.equal(typeof data === "string", true);
         assert.equal(typeof childProcessPid === "number", true);
         assert.equal(data.includes(childProcessPid), true);
-      })
+      });
     });
 
     childProcess.on("message", (msg) => {
       subprocessPid = msg.pid;
-    });
-
-    setTimeout(() => {
-      childProcess.kill();
       const ps = spawn("ps", ["-A", "-o", "ppid,pid"]);
       /** @type {string} data */
       let data;
@@ -45,13 +38,58 @@ describe("watcher background task test", () => {
           data = chunk;
           return;
         }
-        data+=chunk;
+        data += chunk;
       });
       ps.stdout.on("end", () => {
+        data = data.toString();
+        console.log(
+          data.split("\n").filter((line) => line.includes(subprocessPid)),
+        );
+      });
+    });
+
+    setTimeout(() => {
+      childProcess.kill();
+      childProcess.on("exit", () => {
+        const ps = spawn("ps", ["-A", "-o", "ppid,pid"]);
+        let data;
+        ps.stdout.on("data", (chunk) => {
+          if (!data) {
+            data = chunk;
+            return;
+          }
+          data += chunk;
+        });
+        ps.stdout.on("end", () => {
+          data = data.toString();
+          // console.log(
+          //   data.split("\n").filter((line) => line.includes(subprocessPid)),
+          // );
+        });
+      });
+      const ps = spawn("ps", ["-A", "-o", "ppid,pid"]);
+      /** @type {string} data */
+      let data;
+      ps.stdout.on("data", (chunk) => {
+        if (!data) {
+          data = chunk;
+          return;
+        }
+        data += chunk;
+      });
+      ps.stdout.on("end", () => {
+        data = data.toString();
         assert.equal(typeof data === "string", true);
         assert.equal(typeof childProcessPid === "number", true);
         assert.equal(data.includes(childProcessPid), false);
-        assert.equal(data.includes(subprocessPid), true);
+        if (os.platform() !== "linux") {
+          // console.log(
+          //   data.split("\n").filter((line) => line.includes(subprocessPid)),
+          // );
+          assert.equal(data.includes(subprocessPid), false);
+        } else {
+          assert.equal(data.includes(subprocessPid), true);
+        }
         done();
       });
     }, 3000);

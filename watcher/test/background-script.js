@@ -1,6 +1,6 @@
 const { spawn } = require("node:child_process");
 
-const ls = spawn("sleep", ["10"]);
+const ls = spawn("sleep", ["60"]);
 
 if (process.send) {
   process.send({ pid: ls.pid });
