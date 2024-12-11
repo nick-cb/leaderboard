@@ -12,8 +12,8 @@ spawn(
       console.log(process.pid, 'is alive')
       setTimeout(() => {
         console.log(process.pid, 'stop')
-      }, 10000);
+      }, 20000);
     "`
   ],
   {stdio: ['inherit', 'inherit', 'inherit']}
-)
+);
