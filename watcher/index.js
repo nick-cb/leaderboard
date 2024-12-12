@@ -10,9 +10,6 @@ function watch(args) {
   const cwd = process.cwd();
 
   let childProcess = fork(script);
-  childProcess.on("exit", () => {
-    childProcess = fork(script);
-  });
 
   fs.watch(cwd, { recursive: true }, async (event, filename) => {
     if (filename.includes("node_modules")) {
@@ -20,7 +17,8 @@ function watch(args) {
     }
     log(`Detect changes in file ${filename}. Restarting the process.`);
     await kill(childProcess.pid, () => {
-      log("green", `Restarted process.`);
+      log(`Restarted process.`);
+      childProcess = fork(script);
     });
   });
   return childProcess;
