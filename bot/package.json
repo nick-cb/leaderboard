@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "dev:watch": "../watcher/bin/watch.js index.js"
+  },
   "dependencies": {
     "@types/node": "^22.9.3",
     "mongoose": "^8.8.2"
