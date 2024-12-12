@@ -35,7 +35,7 @@ async function newGame({ mode }) {
                 ${0},
                 ${0},
                 ${0},
-                ${0},
+                ${minesweeper.calculate3bv()},
                 ${0},
                 ${null},
                 '${minesweeper.getBoardAsConstantArray()}',
@@ -130,6 +130,9 @@ async function newGameFromBot({ data }) {
 
 async function revealTile(gameId, { x, y }) {
   const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
+  if (minesweeper.isFinished()) {
+    return minesweeper;
+  }
   const tiles = minesweeper.revealTile({ x, y });
   if (tiles.length) {
     await connection.query(
@@ -145,11 +148,31 @@ async function revealTile(gameId, { x, y }) {
       `).toSqlString(),
     );
   }
+  await connection.query(
+    sql(`
+        update games
+        set click_count=click_count+1,left_click_count=left_click_count+1
+        where ID=${gameId}
+      `).toSqlString(),
+  );
+  if (minesweeper.isFinished()) {
+    await connection.query(
+      sql(`
+        update games
+        set result=${minesweeper.isLost || minesweeper.isWon}
+        where ID=${gameId}
+      `).toSqlString(),
+    );
+  }
+
   return minesweeper;
 }
 
 async function toggleFlagMine(gameId, { x, y }) {
   const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
+  if (minesweeper.isFinished()) {
+    return minesweeper;
+  }
   const tile = minesweeper.toggleFlagMine({ x, y });
   if (tile) {
     await connection.query(
@@ -158,6 +181,22 @@ async function toggleFlagMine(gameId, { x, y }) {
         set is_flagged=${true}
         where game_id=${gameId}
         and (x=${tile.coordinate.x} and y=${tile.coordinate.y})
+      `).toSqlString(),
+    );
+  }
+  await connection.query(
+    sql(`
+        update games
+        set click_count=click_count+1,right_click_count=right_click_count+1
+        where ID=${gameId}
+      `).toSqlString(),
+  );
+  if (minesweeper.isFinished()) {
+    await connection.query(
+      sql(`
+        update games
+        set result=${minesweeper.isLost || minesweeper.isWon}
+        where ID=${gameId}
       `).toSqlString(),
     );
   }
