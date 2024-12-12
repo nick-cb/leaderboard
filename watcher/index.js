@@ -1,5 +1,6 @@
 const fs = require("fs");
-const { fork, spawn } = require("child_process");
+const { fork, spawn } = require("node:child_process");
+const { log } = require("./utils/utils");
 
 function watch(args) {
   let script = args[2];
@@ -9,28 +10,41 @@ function watch(args) {
   const cwd = process.cwd();
 
   let childProcess = fork(script);
+  childProcess.on("exit", () => {
+    childProcess = fork(script);
+  });
+
   fs.watch(cwd, { recursive: true }, async (event, filename) => {
     if (filename.includes("node_modules")) {
       return;
     }
-    childProcess.kill();
-    childProcess = fork(script);
+    log(`Detect changes in file ${filename}. Restarting the process.`);
+    await kill(childProcess.pid, () => {
+      log("green", `Restarted process.`);
+    });
   });
   return childProcess;
 }
 
-async function kill(pid) {
+async function kill(pid, callback) {
+  console.log(`Killing process ${pid}`);
   const pidList = await getPidList();
   const needToKillPids = pidList.filter(([ppid, _]) => ppid === pid);
   for (const pid of needToKillPids) {
     await kill(pid[1]);
   }
   process.kill(pid);
-  return new Promise((resolve) => {
-    process.on("exit", () => {
-      resolve(true);
-    });
-  });
+  async function checkProcessKilled() {
+    log.debug("checkProcessKilled");
+    const pidList = await getPidList();
+    const needToKillPids = pidList.filter(([ppid, _]) => ppid === pid);
+    if (needToKillPids.length) {
+      console.error(`Cannot kill process ${pid}`);
+      return;
+    }
+    callback?.();
+  }
+  process.nextTick(checkProcessKilled);
 }
 
 async function getPidList() {
