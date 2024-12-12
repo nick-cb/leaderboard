@@ -1,19 +1,5 @@
-const mysql = require("mysql2/promise.js");
 const { MineSweeper } = require("../minesweeper");
-
-/** @type {mysql.Connection} connection */
-let connection;
-(async () => {
-  try {
-    connection = await mysql.createConnection(
-      "mysql://root:@localhost:3306/minesweeper",
-    );
-    await connection.ping();
-    console.log("connected to database!\n\n");
-  } catch (error) {
-    console.log(error);
-  }
-})();
+const { sql, connection } = require("./db/db.js");
 
 /** @type {Array<[gameId, MineSweeper]>} gamePools */
 const gamePool = [];
@@ -273,10 +259,7 @@ function calculateMasteryScore({ gameHistory }) {
   return scores[0].winsScore[winCount];
 }
 
-const sql = mysql.raw;
-
 module.exports = {
-  connection,
   newGame,
   newGameFromBot,
   revealTile,

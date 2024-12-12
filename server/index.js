@@ -1,5 +1,4 @@
 const http = require("node:http");
-const { connection } = require("./gameController.js");
 
 const controller = require("./gameController.js");
 
@@ -161,8 +160,4 @@ server.on("request", async (req, res) => {
 const PORT = 8000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
-});
-
-process.on("beforeExit", () => {
-  connection.destroy();
 });
