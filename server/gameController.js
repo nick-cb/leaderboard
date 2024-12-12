@@ -1,4 +1,5 @@
 const { MineSweeper } = require("../minesweeper");
+const db = require("./db/db.js");
 const { sql, connection } = require("./db/db.js");
 
 /** @type {Array<[gameId, MineSweeper]>} gamePools */
@@ -11,44 +12,63 @@ const gamePool = [];
 async function newGame({ mode }) {
   const minesweeper = new MineSweeper(16, 16, 40);
 
-  const queryResult = await connection.query(
-    sql(`
-        insert into games(user_id,
-                          start_time,
-                          end_time,
-                          click_count,
-                          left_click_count,
-                          right_click_count,
-                          bv3,
-                          bv3_per_second,
-                          result,
-                          board,
-                          game_mode,
-                          row_count,
-                          col_count,
-                          mine_count,
-                          efficiency,
-                          experience)
-        values (${null},
-                ${null},
-                ${null},
-                ${0},
-                ${0},
-                ${0},
-                ${minesweeper.calculate3bv()},
-                ${0},
-                ${null},
-                '${minesweeper.getBoardAsConstantArray()}',
-                2,
-                ${minesweeper.rows},
-                ${minesweeper.cols},
-                ${minesweeper.mines},
-                0,
-                0);
-      `).toSqlString(),
-  );
+  const queryResult = await db.insert("games").values({
+    user_id: null,
+    start_time: null,
+    end_time: null,
+    click_count: 0,
+    left_click_count: 0,
+    right_click_count: 0,
+    bv3: minesweeper.calculate3bv(),
+    bv3_per_second: 0,
+    result: null,
+    board: minesweeper.getBoardAsConstantArray(),
+    game_mode: 2,
+    row_count: minesweeper.rows,
+    col_count: minesweeper.cols,
+    mine_count: minesweeper.mines,
+    efficiency: 0,
+    experience: 0,
+  });
+  // connection.query(
+  //   sql(`
+  //       insert into games(user_id,
+  //                         start_time,
+  //                         end_time,
+  //                         click_count,
+  //                         left_click_count,
+  //                         right_click_count,
+  //                         bv3,
+  //                         bv3_per_second,
+  //                         result,
+  //                         board,
+  //                         game_mode,
+  //                         row_count,
+  //                         col_count,
+  //                         mine_count,
+  //                         efficiency,
+  //                         experience)
+  //       values (${null},
+  //               ${null},
+  //               ${null},
+  //               ${0},
+  //               ${0},
+  //               ${0},
+  //               ${minesweeper.calculate3bv()},
+  //               ${0},
+  //               ${null},
+  //               '${minesweeper.getBoardAsConstantArray()}',
+  //               2,
+  //               ${minesweeper.rows},
+  //               ${minesweeper.cols},
+  //               ${minesweeper.mines},
+  //               0,
+  //               0);
+  //     `).toSqlString(),
+  // );
   if (queryResult[0] && "insertId" in queryResult[0]) {
     const gameId = queryResult[0].insertId;
+    console.log('71',{connection})
     await connection.query(
       sql(`
           insert into cells(game_id, x, y, is_revealed, is_flagged, constant, timestamp)
