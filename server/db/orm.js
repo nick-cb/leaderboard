@@ -1,4 +1,4 @@
-const EventEmitter = require('node:events');
+const EventEmitter = require("node:events");
 class MyEmitter extends EventEmitter {}
 
 function select(fields) {
@@ -8,31 +8,79 @@ function select(fields) {
     resolveFn = resolve;
     rejectFn = reject;
   });
-  const event = new MyEmitter();
+  // const event = new MyEmitter();
   let promiseResult;
-  event.on('from', () => {
-    console.log("from");
-    promiseResult = 'from';
-  });
-  event.on('when', () => {
-    console.log("when", promiseResult);
-    promiseResult += 'when';
-  });
+  function updateQuery(operation) {
+    if (operation === "from") {
+      console.log("from");
+      promiseResult = "from";
+      return;
+    }
+    if (operation === "when") {
+      console.log("when:", promiseResult);
+      promiseResult += "when";
+      return;
+    }
+  }
+  async function asyncTest() {
+    console.log("async test");
+    return await new Promise((resolve) => {
+      console.log("new promise");
+      setTimeout(() => {
+        console.log("resolve new promise");
+        resolve(true);
+      }, 3000);
+    });
+  }
 
   return {
     from() {
-      event.emit('from');
-      promise.when = function() {
-        event.emit('when');
+      updateQuery("from");
+      promise.when = async function () {
+        await asyncTest();
+        updateQuery("when");
         return promise;
-      }
-      process.nextTick(() => {console.log('resolve promise', promiseResult);resolveFn(promiseResult)})
+      };
+
+      process.nextTick(() => {
+        console.log("resolve promise", promiseResult);
+        resolveFn(promiseResult);
+      });
       return promise;
-    }
-  }
+    },
+  };
 }
 
-(async() => {
-  const result = await select({a:'a'}).from().when();
-  console.log(result);
-})()
+(async () => {
+  const result = await select({ a: "a" }).from().when();
+  console.log({ result });
+  // result.then((data) => {
+  //   console.log({ data });
+  // });
+})();
+
+/*
+Stack:
+-> select
+<-
+-> from
+  -> nextTick: Schedule callback to be run after the current operation
+  <-
+<-
+-> when
+  -> asyncTest
+    -> new Promise
+      -> setTimeout: Push callback to the timers queue
+      <-
+    <-
+  : asyncTest being process in the background
+<-
+: end of current operation
+-> nextTick callback
+<-
+-> process setTimeout callback
+<-
+-> asyncTest is resolved
+<-
+-> updateQuery
+*/
