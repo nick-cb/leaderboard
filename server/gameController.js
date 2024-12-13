@@ -30,57 +30,22 @@ async function newGame({ mode }) {
     efficiency: 0,
     experience: 0,
   });
-  // connection.query(
-  //   sql(`
-  //       insert into games(user_id,
-  //                         start_time,
-  //                         end_time,
-  //                         click_count,
-  //                         left_click_count,
-  //                         right_click_count,
-  //                         bv3,
-  //                         bv3_per_second,
-  //                         result,
-  //                         board,
-  //                         game_mode,
-  //                         row_count,
-  //                         col_count,
-  //                         mine_count,
-  //                         efficiency,
-  //                         experience)
-  //       values (${null},
-  //               ${null},
-  //               ${null},
-  //               ${0},
-  //               ${0},
-  //               ${0},
-  //               ${minesweeper.calculate3bv()},
-  //               ${0},
-  //               ${null},
-  //               '${minesweeper.getBoardAsConstantArray()}',
-  //               2,
-  //               ${minesweeper.rows},
-  //               ${minesweeper.cols},
-  //               ${minesweeper.mines},
-  //               0,
-  //               0);
-  //     `).toSqlString(),
-  // );
   if (queryResult[0] && "insertId" in queryResult[0]) {
     const gameId = queryResult[0].insertId;
-    console.log('71',{connection})
-    await connection.query(
-      sql(`
-          insert into cells(game_id, x, y, is_revealed, is_flagged, constant, timestamp)
-          values ${minesweeper
-            .getBoardAsConstantArray()
-            .flatMap((row, y) => {
-              return row.map((col, x) => {
-                return `(${gameId}, ${x},${y},${false},${false},${col},${null})`;
-              });
-            })
-            .join(",")}
-        `).toSqlString(),
+    await db.insert("cells").values(
+      minesweeper.getBoardAsConstantArray().flatMap((row, y) => {
+        return row.map((col, x) => {
+          return {
+            game_id: gameId,
+            x: x,
+            y: y,
+            is_revealed: false,
+            is_flagged: false,
+            constant: col,
+            timestamp: null,
+          };
+        });
+      }),
     );
     gamePool.push([gameId, minesweeper]);
     return [gameId, minesweeper];
@@ -229,21 +194,20 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     return game;
   }
 
-  const [gameRows, __] = await connection.query(
-    sql(
-      `select row_count, col_count from games where ID=${gameId}`,
-    ).toSqlString(),
-  );
+  const [gameRows, __] = await db
+    .select(["row_count", "col_count"])
+    .from("games")
+    .where(sql(`ID=${gameId}`));
   game = gameRows[0];
   if (!game) {
     return null;
   }
 
-  const [cellRows, ___] = await connection.query(
-    sql(
-      `select constant, x, y, is_flagged, is_revealed from cells where game_id=${gameId} order by x,y `,
-    ).toSqlString(),
-  );
+  const [cellRows, ___] = await db
+    .select(["constant", "x", "y", "is_flagged", "is_revealed"])
+    .from("cells")
+    .where(sql(`game_id=${gameId}`))
+    .order({ x: 1, y: 1 });
 
   game = MineSweeper.from({
     rows: game.row_count,

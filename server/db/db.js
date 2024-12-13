@@ -4,7 +4,7 @@ const mysql = require("mysql2/promise.js");
 let connection;
 (async () => {
   try {
-    console.log('7',{ connection })
+    console.log("7", { connection });
     if (connection) {
       return;
     }
@@ -18,58 +18,92 @@ let connection;
   }
 })();
 
-const sql = mysql.raw;
+/** @param {Array<string>} fields */
+function select(fields) {
+  let resolveFn;
+  let rejectFn;
+  const promise = new Promise((resolve, reject) => {
+    resolveFn = resolve;
+    rejectFn = reject;
+  });
+
+  let columns;
+  if (Array.isArray(fields)) {
+    columns = fields.join(",");
+  } else {
+    columns = Object.keys(fields).join(",");
+  }
+  let sqlStatement = [`select ${columns}`];
+  function updateQuery(operation, params) {
+    if (operation === "from") {
+      sqlStatement.push(`from ${params.table}`);
+      return;
+    }
+    if (operation === "where") {
+      if ("toSqlString" in params) {
+        sqlStatement.push(`where ${params.toSqlString()}`);
+      }
+      return;
+    }
+    if (operation === "order") {
+      sqlStatement.push(
+        `order by ${Object.entries(params)
+          .map(([key, value]) => {
+            return `${key} ${value === 1 ? "ASC" : "DESC"}`;
+          })
+          .join(",")}`,
+      );
+      return;
+    }
+  }
+
+  return {
+    from(table) {
+      updateQuery("from", { table });
+      promise.where = function (params) {
+        updateQuery("where", params);
+        return promise;
+      };
+      promise.order = function (params) {
+        updateQuery("order", params);
+        return promise;
+      };
+
+      process.nextTick(() => {
+        console.log(sqlStatement.join(" "));
+        resolveFn(connection.query(sqlStatement.join(" ")));
+      });
+      return promise;
+    },
+  };
+}
 
 /** @param {string} table */
 function insert(table) {
   return {
     values(data) {
       let columns;
+      let valuePlaceholder;
       let values;
       if (Array.isArray(data)) {
         columns = Object.keys(data[0]);
-        values = data.map((row) => Object.values(row));
+        valuePlaceholder = data
+          .map(() => columns.map(() => "?").join(","))
+          .join("),(");
+        values = data.flatMap((row) => Object.values(row));
       } else {
         columns = Object.keys(data);
         values = Object.values(data);
+        valuePlaceholder = values.map(() => "?").join(",");
       }
-
       return connection.execute(
-        `insert into ${table} (${columns.join(",")}) values (${columns.map(() => "?").join(",")})`,
+        `insert into ${table} (${columns.join(",")}) values (${valuePlaceholder})`,
         values,
-        //   sql(`
-        //   insert into ${table}(${columns})
-        //   values (${values})
-        // `).toSqlString(),
       );
     },
   };
 }
 
-function convertValue(value) {
-  if (typeof value === "string") {
-    return "'" + value + "'";
-  }
-  if (value instanceof Date) {
-    return "'" + convertDateToSqlDate(value) + "'";
-  }
+const sql = mysql.raw;
 
-  return value;
-}
-
-function convertDateToSqlDate(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const dom = date.getDate();
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const second = date.getSeconds();
-
-  return [year, month, dom].join("-") + " " + [hour, minute, second].join(":");
-}
-
-process.on("beforeExit", () => {
-  connection.destroy();
-});
-
-module.exports = { connection, sql, insert };
+module.exports = { connection, select, insert, sql };
