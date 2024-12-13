@@ -18,6 +18,58 @@ let connection;
   }
 })();
 
+function from(params) {
+  return [`from ${params}`];
+}
+
+function where(params) {
+  if (Array.isArray(params)) {
+    return [`where ${params[0]}`, params[1]];
+  }
+  if ("toSqlString" in params) {
+    return `where ${params.toSqlString()}`;
+  }
+  throw new Error("Invalid statement");
+}
+
+function orderBy(params) {
+  return `order by ${Object.entries(params)
+    .map(([key, value]) => {
+      return `${key} ${value === 1 ? "ASC" : "DESC"}`;
+    })
+    .join(",")}`;
+}
+
+function set(params) {
+  const sql = `set ${Object.keys(params)
+    .map((key) => `${key}=?`)
+    .join(",")}`;
+  const values = Object.values(params).map((val) => {
+    if ("toSqlString" in val) {
+      return val.toSqlString();
+    }
+    return val;
+  });
+
+  return [sql, values];
+}
+
+function and(...params) {
+  const statement = params.map((p) => p[0]).join(" and ");
+  const values = params.flatMap((p) => p[1]);
+  return [statement, values];
+}
+
+function or(...params) {
+  const statement = params.map((p) => p[0]).join(" or ");
+  const values = params.flatMap((p) => p[1]);
+  return [statement, values];
+}
+
+function eq(key, value) {
+  return [`${key}=?`, value];
+}
+
 /** @param {Array<string>} fields */
 function select(fields) {
   let resolveFn;
@@ -27,51 +79,28 @@ function select(fields) {
     rejectFn = reject;
   });
 
-  let columns;
-  if (Array.isArray(fields)) {
-    columns = fields.join(",");
-  } else {
-    columns = Object.keys(fields).join(",");
-  }
-  let sqlStatement = [`select ${columns}`];
-  function updateQuery(operation, params) {
-    if (operation === "from") {
-      sqlStatement.push(`from ${params.table}`);
-      return;
-    }
-    if (operation === "where") {
-      if ("toSqlString" in params) {
-        sqlStatement.push(`where ${params.toSqlString()}`);
-      }
-      return;
-    }
-    if (operation === "order") {
-      sqlStatement.push(
-        `order by ${Object.entries(params)
-          .map(([key, value]) => {
-            return `${key} ${value === 1 ? "ASC" : "DESC"}`;
-          })
-          .join(",")}`,
-      );
-      return;
-    }
-  }
+  let sql = [`select ${fields.join(",")}`];
+  let values;
 
   return {
     from(table) {
-      updateQuery("from", { table });
-      promise.where = function (params) {
-        updateQuery("where", params);
+      sql.push(from(table));
+      promise.where = (params) => {
+        sql.push(where(params));
         return promise;
       };
-      promise.order = function (params) {
-        updateQuery("order", params);
+      promise.orderBy = (params) => {
+        sql.push(orderBy(params));
         return promise;
       };
 
-      process.nextTick(() => {
-        console.log(sqlStatement.join(" "));
-        resolveFn(connection.query(sqlStatement.join(" ")));
+      process.nextTick(async () => {
+        try {
+          const result = await connection.execute(sql, values);
+          resolveFn(result);
+        } catch (error) {
+          rejectFn(error);
+        }
       });
       return promise;
     },
@@ -112,42 +141,44 @@ function update(table) {
     rejectFn = reject;
   });
 
-  let sqlStatement = [`update ${table}`];
-  function updateQuery(operation, params) {
-    if (operation === "set") {
-      sqlStatement.push(
-        `set ${Object.entries(params)
-          .map(([key, value]) => {
-            return `${key}=${value}`;
-          })
-          .join(",")}`,
-      );
-      return;
-    }
-    if (operation === "where") {
-      if ("toSqlString" in params) {
-        sqlStatement.push(`where ${params.toSqlString()}`);
-      }
-      return;
-    }
-  }
+  let sql = [`update ${table}`];
+  let values = [];
 
   promise.set = (params) => {
-    updateQuery("set", params);
+    const s = set(params);
+    sql.push(s[0]);
+    values.push(...s[1]);
     return promise;
   };
   promise.where = (params) => {
-    updateQuery("where", params);
+    sql.push(where(params));
     return promise;
   };
 
-  process.nextTick(() => {
-    console.log(sqlStatement.join(" "));
-    connection.query(sqlStatement.join(" "));
+  process.nextTick(async () => {
+    try {
+      const result = await connection.execute(sql.join(" "), values);
+      resolveFn(result);
+    } catch (error) {
+      rejectFn(error);
+    }
   });
   return promise;
 }
 
 const sql = mysql.raw;
 
-module.exports = { connection, select, insert, update, sql };
+module.exports = {
+  connection,
+  select,
+  insert,
+  update,
+  sql,
+  from,
+  where,
+  orderBy,
+  set,
+  and,
+  or,
+  eq,
+};
