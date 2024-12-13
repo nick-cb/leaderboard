@@ -104,6 +104,50 @@ function insert(table) {
   };
 }
 
+function update(table) {
+  let resolveFn;
+  let rejectFn;
+  const promise = new Promise((resolve, reject) => {
+    resolveFn = resolve;
+    rejectFn = reject;
+  });
+
+  let sqlStatement = [`update ${table}`];
+  function updateQuery(operation, params) {
+    if (operation === "set") {
+      sqlStatement.push(
+        `set ${Object.entries(params)
+          .map(([key, value]) => {
+            return `${key}=${value}`;
+          })
+          .join(",")}`,
+      );
+      return;
+    }
+    if (operation === "where") {
+      if ("toSqlString" in params) {
+        sqlStatement.push(`where ${params.toSqlString()}`);
+      }
+      return;
+    }
+  }
+
+  promise.set = (params) => {
+    updateQuery("set", params);
+    return promise;
+  };
+  promise.where = (params) => {
+    updateQuery("where", params);
+    return promise;
+  };
+
+  process.nextTick(() => {
+    console.log(sqlStatement.join(" "));
+    connection.query(sqlStatement.join(" "));
+  });
+  return promise;
+}
+
 const sql = mysql.raw;
 
-module.exports = { connection, select, insert, sql };
+module.exports = { connection, select, insert, update, sql };

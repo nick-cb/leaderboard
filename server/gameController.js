@@ -120,18 +120,19 @@ async function revealTile(gameId, { x, y }) {
   }
   const tiles = minesweeper.revealTile({ x, y });
   if (tiles.length) {
-    await connection.query(
-      sql(`
-        update cells
-        set is_revealed=${true}
-        where game_id=${gameId}
-        and ${tiles
-          .map((tile) => {
-            return `(x=${tile.coordinate.x} and y=${tile.coordinate.y})`;
-          })
-          .join(" or ")}
-      `).toSqlString(),
-    );
+    await db
+      .update("cells")
+      .set({ is_revealed: true })
+      .where(
+        sql(`
+          game_id=${gameId}
+          and ${tiles
+            .map((tile) => {
+              return `(x=${tile.coordinate.x} and y=${tile.coordinate.y})`;
+            })
+            .join(" or ")}
+        `),
+      );
   }
   await connection.query(
     sql(`
