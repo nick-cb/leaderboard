@@ -1,6 +1,6 @@
 const { MineSweeper } = require("../minesweeper");
 const db = require("./db/db.js");
-const { sql, connection, eq, and } = require("./db/db.js");
+const { sql, connection, eq, and, or } = require("./db/db.js");
 
 /** @type {Array<[gameId, MineSweeper]>} gamePools */
 const gamePool = [];
@@ -126,19 +126,24 @@ async function revealTile(gameId, { x, y }) {
       .where(
         and(
           eq("game_id", gameId),
-          ...tiles.map((tile) => {
-            return and(eq("x", tile.coordinate.x), eq("y", tile.coordinate.y));
-          }),
+          or(
+            ...tiles.map((tile) => {
+              return and(
+                eq("x", tile.coordinate.x),
+                eq("y", tile.coordinate.y),
+              );
+            }),
+          ),
         ),
       );
+    await db
+      .update("games")
+      .set({
+        click_count: sql(`click_count+1`),
+        left_click_count: sql("left_click_count+1"),
+      })
+      .where(eq("ID", gameId));
   }
-  await db
-    .update("games")
-    .set({
-      click_count: sql(`click_count+1`),
-      left_click_count: sql("left_click_count+1"),
-    })
-    .where(eq("ID", gameId));
   if (minesweeper.isFinished()) {
     await db
       .update("games")
@@ -156,30 +161,27 @@ async function toggleFlagMine(gameId, { x, y }) {
   }
   const tile = minesweeper.toggleFlagMine({ x, y });
   if (tile) {
-    await connection.query(
-      sql(`
-        update cells
-        set is_flagged=${true}
-        where game_id=${gameId}
-        and (x=${tile.coordinate.x} and y=${tile.coordinate.y})
-      `).toSqlString(),
-    );
+    await db
+      .update("cells")
+      .set({ is_flagged: true })
+      .where(
+        sql(
+          `game_id=${gameId} and (x=${tile.coordinate.x} and y=${tile.coordinate.y})`,
+        ),
+      );
   }
-  await connection.query(
-    sql(`
-        update games
-        set click_count=click_count+1,right_click_count=right_click_count+1
-        where ID=${gameId}
-      `).toSqlString(),
-  );
+  await db
+    .update("games")
+    .set({
+      click_count: sql("click_count+1"),
+      right_click_count: sql("right_click_count+1"),
+    })
+    .where(eq("ID", gameId));
   if (minesweeper.isFinished()) {
-    await connection.query(
-      sql(`
-        update games
-        set result=${minesweeper.isLost || minesweeper.isWon}
-        where ID=${gameId}
-      `).toSqlString(),
-    );
+    await db
+      .update("games")
+      .set({ result: minesweeper.isLost || minesweeper.isWon })
+      .where(eq("ID", gameId));
   }
   return minesweeper;
 }

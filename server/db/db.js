@@ -4,7 +4,6 @@ const mysql = require("mysql2/promise.js");
 let connection;
 (async () => {
   try {
-    console.log("7", { connection });
     if (connection) {
       return;
     }
@@ -30,7 +29,7 @@ function where(params) {
     ];
   }
   if ("toSqlString" in params) {
-    return [`where ${params.toSqlString()}`];
+    return [`where ${params.toSqlString()}`, []];
   }
   throw new Error("Invalid statement");
 }
@@ -107,7 +106,6 @@ function select(fields) {
 
       process.nextTick(async () => {
         try {
-          console.log(sql.join(" "), { values });
           const result = await connection.execute(sql.join(" "), values);
           resolveFn(result);
         } catch (error) {
@@ -171,7 +169,6 @@ function update(table) {
 
   process.nextTick(async () => {
     try {
-      console.log(sql.join(" "), { values });
       const result = await connection.execute(sql.join(" "), values);
       resolveFn(result);
     } catch (error) {
