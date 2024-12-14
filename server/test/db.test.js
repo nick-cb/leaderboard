@@ -9,16 +9,21 @@ describe("sql helper functions test", () => {
 
   it("should work with and", () => {
     assert.deepEqual(and(eq("key", "value"), eq("key2", "value2")), [
-      "key=? and key2=?",
+      "(key=? and key2=?)",
       ["value", "value2"],
     ]);
+
+    assert.deepEqual(
+      and(eq("key", "value"), and(eq("key2", "value2"), eq("key3", "value3"))),
+      ["(key=? and (key2=? and key3=?))", ["value", "value2", "value3"]],
+    );
   });
 
   it("should work with or", () => {
-    assert.deepEqual(or(eq("key", "value")), ["key=?", ["value"]]);
+    assert.deepEqual(or(eq("key", "value")), ["(key=?)", ["value"]]);
 
     assert.deepEqual(or(eq("key", "value"), eq("key2", "value2")), [
-      "key=? or key2=?",
+      "(key=? or key2=?)",
       ["value", "value2"],
     ]);
   });
@@ -30,15 +35,15 @@ describe("sql select statement test", () => {
   });
 
   it("should work with where", () => {
-    assert.deepEqual(where(eq("key", "value")), [`where key=?`, "value"]);
+    assert.deepEqual(where(eq("key", "value")), [`where key=?`, ["value"]]);
 
     assert.deepEqual(where(and(eq("key", "value"), eq("key2", "value2"))), [
-      `where key=? and key2=?`,
+      `where (key=? and key2=?)`,
       ["value", "value2"],
     ]);
 
     assert.deepEqual(where(or(eq("key", "value"), eq("key2", "value2"))), [
-      `where key=? or key2=?`,
+      `where (key=? or key2=?)`,
       ["value", "value2"],
     ]);
   });

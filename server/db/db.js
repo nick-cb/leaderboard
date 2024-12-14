@@ -46,12 +46,15 @@ function orderBy(params) {
 }
 
 function set(params) {
-  const sql = `set ${Object.keys(params)
-    .map((key) => `${key}=?`)
+  const sql = `set ${Object.entries(params)
+    .map(
+      ([key, val]) =>
+        `${key}=${typeof val === "object" && "toSqlString" in val ? val.toSqlString() : "?"}`,
+    )
     .join(",")}`;
-  const values = Object.values(params).map((val) => {
-    if ("toSqlString" in val) {
-      return val.toSqlString();
+  const values = Object.values(params).filter((val) => {
+    if (typeof val === "object" && "toSqlString" in val) {
+      return false;
     }
     return val;
   });
@@ -60,13 +63,13 @@ function set(params) {
 }
 
 function and(...params) {
-  const statement = params.map((p) => p[0]).join(" and ");
+  const statement = "(" + params.map((p) => p[0]).join(" and ") + ")";
   const values = params.flatMap((p) => p[1]);
   return [statement, values];
 }
 
 function or(...params) {
-  const statement = params.map((p) => p[0]).join(" or ");
+  const statement = "(" + params.map((p) => p[0]).join(" or ") + ")";
   const values = params.flatMap((p) => p[1]);
   return [statement, values];
 }
@@ -160,12 +163,15 @@ function update(table) {
     return promise;
   };
   promise.where = (params) => {
-    sql.push(where(params));
+    const w = where(params);
+    sql.push(w[0]);
+    values.push(...w[1]);
     return promise;
   };
 
   process.nextTick(async () => {
     try {
+      console.log(sql.join(" "), { values });
       const result = await connection.execute(sql.join(" "), values);
       resolveFn(result);
     } catch (error) {
