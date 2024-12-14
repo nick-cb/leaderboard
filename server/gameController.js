@@ -1,6 +1,6 @@
 const { MineSweeper } = require("../minesweeper");
 const db = require("./db/db.js");
-const { sql, connection } = require("./db/db.js");
+const { sql, connection, eq } = require("./db/db.js");
 
 /** @type {Array<[gameId, MineSweeper]>} gamePools */
 const gamePool = [];
@@ -198,7 +198,7 @@ async function getGameFromPoolOrFromDatabase(gameId) {
   const [gameRows, __] = await db
     .select(["row_count", "col_count"])
     .from("games")
-    .where(sql(`ID=${gameId}`));
+    .where(eq("ID", gameId));
   game = gameRows[0];
   if (!game) {
     return null;
@@ -207,8 +207,8 @@ async function getGameFromPoolOrFromDatabase(gameId) {
   const [cellRows, ___] = await db
     .select(["constant", "x", "y", "is_flagged", "is_revealed"])
     .from("cells")
-    .where(sql(`game_id=${gameId}`))
-    .order({ x: 1, y: 1 });
+    .where(eq("game_id", gameId))
+    .orderBy({ x: 1, y: 1 });
 
   game = MineSweeper.from({
     rows: game.row_count,

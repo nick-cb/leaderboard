@@ -24,20 +24,25 @@ function from(params) {
 
 function where(params) {
   if (Array.isArray(params)) {
-    return [`where ${params[0]}`, params[1]];
+    return [
+      `where ${params[0]}`,
+      Array.isArray(params[1]) ? params[1] : [params[1]],
+    ];
   }
   if ("toSqlString" in params) {
-    return `where ${params.toSqlString()}`;
+    return [`where ${params.toSqlString()}`];
   }
   throw new Error("Invalid statement");
 }
 
 function orderBy(params) {
-  return `order by ${Object.entries(params)
-    .map(([key, value]) => {
-      return `${key} ${value === 1 ? "ASC" : "DESC"}`;
-    })
-    .join(",")}`;
+  return [
+    `order by ${Object.entries(params)
+      .map(([key, value]) => {
+        return `${key} ${value === 1 ? "ASC" : "DESC"}`;
+      })
+      .join(",")}`,
+  ];
 }
 
 function set(params) {
@@ -80,23 +85,27 @@ function select(fields) {
   });
 
   let sql = [`select ${fields.join(",")}`];
-  let values;
+  let values = [];
 
   return {
     from(table) {
       sql.push(from(table));
       promise.where = (params) => {
-        sql.push(where(params));
+        const w = where(params);
+        sql.push(w[0]);
+        values.push(...w[1]);
         return promise;
       };
       promise.orderBy = (params) => {
-        sql.push(orderBy(params));
+        const order = orderBy(params);
+        sql.push(order[0]);
         return promise;
       };
 
       process.nextTick(async () => {
         try {
-          const result = await connection.execute(sql, values);
+          console.log(sql.join(" "), { values });
+          const result = await connection.execute(sql.join(" "), values);
           resolveFn(result);
         } catch (error) {
           rejectFn(error);
