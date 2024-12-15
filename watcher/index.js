@@ -16,8 +16,9 @@ function watch(args) {
       return;
     }
     log(`Detect changes in file ${filename}. Restarting the process.`);
+    childProcess.disconnect();
     await kill(childProcess.pid, () => {
-      log(`Restarted process.`);
+      log(`Restarted process. ${childProcess.pid}`);
       childProcess = fork(script);
     });
   });
@@ -31,7 +32,15 @@ async function kill(pid, callback) {
   for (const pid of needToKillPids) {
     await kill(pid[1]);
   }
-  process.kill(pid);
+  try {
+    process.kill(pid);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (!error.message.includes("ESRCH")) {
+        throw error;
+      }
+    }
+  }
   async function checkProcessKilled() {
     log.debug("checkProcessKilled");
     const pidList = await getPidList();
