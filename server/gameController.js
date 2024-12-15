@@ -55,42 +55,24 @@ async function newGame({ mode }) {
 }
 
 async function newGameFromBot({ data }) {
-  const queryResult = await connection.query(
-    sql(`
-        insert into games(user_id,
-                          start_time,
-                          end_time,
-                          click_count,
-                          left_click_count,
-                          right_click_count,
-                          bv3,
-                          bv3_per_second,
-                          result,
-                          board,
-                          game_mode,
-                          row_count,
-                          col_count,
-                          mine_count,
-                          efficiency,
-                          experience)
-        values (${data.userId},
-                '${convertDateToSqlDate(new Date(data.startTime))}',
-                '${convertDateToSqlDate(new Date(data.endTime))}',
-                ${data.clicks},
-                ${data.leftClicks},
-                ${data.rightClicks},
-                ${data.bv3},
-                ${data.bv3PerSecond},
-                ${data.result},
-                '${data.board.flatMap((row) => row).join(",")}',
-                2,
-                ${data.rows},
-                ${data.cols},
-                ${data.mines},
-                0,
-                0);
-      `).toSqlString(),
-  );
+  const queryResult = await db.insert("games").values({
+    user_id: data.userId,
+    start_time: data.startTime,
+    end_time: data.endTime,
+    click_count: data.clicks,
+    left_click_count: data.leftClicks,
+    right_click_count: data.rightClicks,
+    bv3: data.bv3,
+    bv3_per_second: data.bv3PerSecond,
+    result: data.result,
+    board: data.board.flatMap((row) => row).join(","),
+    game_mode: 2,
+    row_count: data.rows,
+    col_count: data.cols,
+    mine_count: data.mines,
+    efficiency: 0,
+    experience: 0,
+  });
 
   if (queryResult[0] && "insertId" in queryResult[0]) {
     const gameId = queryResult[0].insertId;
