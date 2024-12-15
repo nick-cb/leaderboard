@@ -16,7 +16,9 @@ function watch(args) {
       return;
     }
     log(`Detect changes in file ${filename}. Restarting the process.`);
-    childProcess.disconnect();
+    try {
+      childProcess.disconnect();
+    } catch (error) {}
     await kill(childProcess.pid, () => {
       log(`Restarted process. ${childProcess.pid}`);
       childProcess = fork(script);
