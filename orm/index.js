@@ -12,8 +12,8 @@ exports.or = or;
 exports.eq = eq;
 function setupDatabase(connection) {
     const builder = new QueryBuilder();
-    if (typeof connection === "function") {
-        connection().then((value) => {
+    if ("then" in connection) {
+        connection.then((value) => {
             QueryBuilder.connection = value;
         });
     }

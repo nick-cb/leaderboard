@@ -2,12 +2,10 @@ import { Connection } from "mysql2/promise";
 
 type Primitive = Number | String | Date;
 
-export function setupDatabase(
-  connection: Connection | (() => Promise<Connection>),
-) {
+export function setupDatabase(connection: Connection | Promise<Connection>) {
   const builder = new QueryBuilder();
-  if (typeof connection === "function") {
-    connection().then((value) => {
+  if ("then" in connection) {
+    connection.then((value) => {
       QueryBuilder.connection = value;
     });
   } else {

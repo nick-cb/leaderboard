@@ -1,6 +1,6 @@
 import { Connection } from "mysql2/promise";
 type Primitive = Number | String | Date;
-export declare function setupDatabase(connection: Connection | (() => Promise<Connection>)): QueryBuilder;
+export declare function setupDatabase(connection: Connection | Promise<Connection>): QueryBuilder;
 declare class SQL {
     private strings;
     private values;
