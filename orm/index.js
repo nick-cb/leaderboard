@@ -10,9 +10,16 @@ exports.set = set;
 exports.and = and;
 exports.or = or;
 exports.eq = eq;
-async function setupDatabase(connection) {
-    await connection.ping();
-    const builder = new QueryBuilder(connection);
+function setupDatabase(connection) {
+    const builder = new QueryBuilder();
+    if (typeof connection === "function") {
+        connection().then((value) => {
+            QueryBuilder.connection = value;
+        });
+    }
+    else {
+        QueryBuilder.connection = connection;
+    }
     return builder;
 }
 class SQL {
@@ -101,9 +108,9 @@ function eq(key, value) {
     return [`${key}=?`, value];
 }
 class QueryBuilder {
-    constructor(connection) {
-        this.connection = connection;
-    }
+    // constructor(connection: Connection) {
+    //   this.connection = connection;
+    // }
     select(fields) {
         let resolveFn;
         let rejectFn;
@@ -129,7 +136,7 @@ class QueryBuilder {
                 };
                 process.nextTick(async () => {
                     try {
-                        const result = await this.connection.execute(sql.join(" "), values);
+                        const result = await QueryBuilder.connection.execute(sql.join(" "), values);
                         resolveFn(result);
                     }
                     catch (error) {
@@ -159,7 +166,7 @@ class QueryBuilder {
                     valuePlaceholder = values.map(() => "?").join(",");
                 }
                 console.log("this", this);
-                return this.connection.execute(`insert into ${table} (${columns.join(",")}) values (${valuePlaceholder})`, values);
+                return QueryBuilder.connection.execute(`insert into ${table} (${columns.join(",")}) values (${valuePlaceholder})`, values);
             },
         };
     }
@@ -186,7 +193,7 @@ class QueryBuilder {
         };
         process.nextTick(async () => {
             try {
-                const result = await this.connection.execute(sql.join(" "), values);
+                const result = await QueryBuilder.connection.execute(sql.join(" "), values);
                 resolveFn(result);
             }
             catch (error) {

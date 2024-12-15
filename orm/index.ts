@@ -2,9 +2,17 @@ import { Connection } from "mysql2/promise";
 
 type Primitive = Number | String | Date;
 
-export async function setupDatabase(connection: Connection) {
-  await connection.ping();
-  const builder = new QueryBuilder(connection);
+export function setupDatabase(
+  connection: Connection | (() => Promise<Connection>),
+) {
+  const builder = new QueryBuilder();
+  if (typeof connection === "function") {
+    connection().then((value) => {
+      QueryBuilder.connection = value;
+    });
+  } else {
+    QueryBuilder.connection = connection;
+  }
   return builder;
 }
 
@@ -130,10 +138,10 @@ type QueryPromise<
 };
 
 export class QueryBuilder {
-  connection: Connection;
-  constructor(connection: Connection) {
-    this.connection = connection;
-  }
+  static connection: Connection;
+  // constructor(connection: Connection) {
+  //   this.connection = connection;
+  // }
 
   select(fields: Array<string>) {
     let resolveFn: (value: unknown) => void;
@@ -164,7 +172,10 @@ export class QueryBuilder {
 
         process.nextTick(async () => {
           try {
-            const result = await this.connection.execute(sql.join(" "), values);
+            const result = await QueryBuilder.connection.execute(
+              sql.join(" "),
+              values,
+            );
             resolveFn(result);
           } catch (error) {
             rejectFn(error);
@@ -193,7 +204,7 @@ export class QueryBuilder {
           valuePlaceholder = values.map(() => "?").join(",");
         }
         console.log("this", this);
-        return this.connection.execute(
+        return QueryBuilder.connection.execute(
           `insert into ${table} (${columns.join(",")}) values (${valuePlaceholder})`,
           values,
         );
@@ -227,7 +238,10 @@ export class QueryBuilder {
 
     process.nextTick(async () => {
       try {
-        const result = await this.connection.execute(sql.join(" "), values);
+        const result = await QueryBuilder.connection.execute(
+          sql.join(" "),
+          values,
+        );
         resolveFn(result);
       } catch (error) {
         rejectFn(error);

@@ -1,6 +1,6 @@
 import { Connection } from "mysql2/promise";
 type Primitive = Number | String | Date;
-export declare function setupDatabase(connection: Connection): Promise<QueryBuilder>;
+export declare function setupDatabase(connection: Connection | (() => Promise<Connection>)): QueryBuilder;
 declare class SQL {
     private strings;
     private values;
@@ -30,8 +30,7 @@ type QueryPromise<T extends Query, R extends any = Promise<any>> = Promise<any> 
     [K in T]: (params: any) => R;
 };
 export declare class QueryBuilder {
-    connection: Connection;
-    constructor(connection: Connection);
+    static connection: Connection;
     select(fields: Array<string>): {
         from: (table: string) => Promise<any> & {
             where: (params: any) => QueryPromise<"orderBy", Promise<any>>;
