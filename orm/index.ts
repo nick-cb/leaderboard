@@ -17,12 +17,12 @@ export function setupDatabase(connection: Connection | Promise<Connection>) {
 class SQL {
   constructor(
     private strings: TemplateStringsArray,
-    private values: (Primitive | Primitive[] | SQL)[],
+    private values: (Primitive | SQL)[],
   ) {}
 
   toSqlString() {
     let finalQuery = "";
-    let finalValues: (Primitive | Primitive[])[] = [];
+    let finalValues: Primitive[] = [];
     for (let i = 0; i < this.values.length; i++) {
       const value = this.values[i];
       const str = this.strings[i];
@@ -57,7 +57,7 @@ function isTemplateLitteral(
 
 export function sql(
   strings: TemplateStringsArray,
-  ...values: (Primitive | SQL | Primitive[])[]
+  ...values: (Primitive | SQL)[]
 ): SQL {
   if (!isTemplateLitteral(strings, ...values)) {
     throw new Error("Incorrect template litteral call");
@@ -80,7 +80,8 @@ export function where(
     ];
   }
   if ("toSqlString" in params) {
-    return [`where ${params.toSqlString()}`, []];
+    const result = params.toSqlString();
+    return [`where ${result.query}`, [...result.values]];
   }
   throw new Error("Invalid statement");
 }
@@ -99,16 +100,31 @@ export function set(params: { [k in string]: SQL | Primitive }): [
   string,
   Primitive[],
 ] {
-  const sql = `set ${Object.entries(params)
-    .map(
-      ([key, val]) => `${key}=${val instanceof SQL ? val.toSqlString() : "?"}`,
-    )
-    .join(",")}`;
-  const values = Object.values(params).filter((val) => {
-    return !(val instanceof SQL);
-  }) as Primitive[];
+  const sql = [];
+  const values = [];
+  for (const [key, val] of Object.entries(params)) {
+    if (val instanceof SQL) {
+      const result = val.toSqlString();
+      sql.push(`${key}=${result.query}`);
+      values.push(...result.values);
+    } else {
+      sql.push(`${key}=?`);
+      values.push(val);
+    }
+  }
+  // const sql = `set ${Object.entries(params)
+  //   .map(([key, val]) => {
+  //     if (val instanceof SQL) {
+  //       console.log(val.toSqlString());
+  //     }
+  //     return `${key}=${val instanceof SQL ? val.toSqlString() : "?"}`;
+  //   })
+  //   .join(",")}`;
+  // const values = Object.values(params).filter((val) => {
+  //   return !(val instanceof SQL);
+  // }) as Primitive[];
 
-  return [sql, values];
+  return ["set " + sql.join(","), values];
 }
 
 export function and(...params: Array<any>) {
@@ -137,6 +153,7 @@ type QueryPromise<
 
 export class QueryBuilder {
   static connection: Connection;
+  connection = QueryBuilder.connection;
   // constructor(connection: Connection) {
   //   this.connection = connection;
   // }

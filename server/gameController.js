@@ -139,8 +139,8 @@ async function revealTile(gameId, { x, y }) {
     await db
       .update("games")
       .set({
-        click_count: sql(`click_count+1`),
-        left_click_count: sql("left_click_count+1"),
+        click_count: sql`click_count+1`,
+        left_click_count: sql`left_click_count+1`,
       })
       .where(eq("ID", gameId));
   }
@@ -165,16 +165,14 @@ async function toggleFlagMine(gameId, { x, y }) {
       .update("cells")
       .set({ is_flagged: true })
       .where(
-        sql(
-          `game_id=${gameId} and (x=${tile.coordinate.x} and y=${tile.coordinate.y})`,
-        ),
+        sql`game_id=${gameId} and (x=${tile.coordinate.x} and y=${tile.coordinate.y})`,
       );
   }
   await db
     .update("games")
     .set({
-      click_count: sql("click_count+1"),
-      right_click_count: sql("right_click_count+1"),
+      click_count: sql`click_count+1`,
+      right_click_count: sql`right_click_count+1`,
     })
     .where(eq("ID", gameId));
   if (minesweeper.isFinished()) {

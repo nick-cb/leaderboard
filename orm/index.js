@@ -72,7 +72,8 @@ function where(params) {
         ];
     }
     if ("toSqlString" in params) {
-        return [`where ${params.toSqlString()}`, []];
+        const result = params.toSqlString();
+        return [`where ${result.query}`, [...result.values]];
     }
     throw new Error("Invalid statement");
 }
@@ -86,13 +87,31 @@ function orderBy(params) {
     ];
 }
 function set(params) {
-    const sql = `set ${Object.entries(params)
-        .map(([key, val]) => `${key}=${val instanceof SQL ? val.toSqlString() : "?"}`)
-        .join(",")}`;
-    const values = Object.values(params).filter((val) => {
-        return !(val instanceof SQL);
-    });
-    return [sql, values];
+    const sql = [];
+    const values = [];
+    for (const [key, val] of Object.entries(params)) {
+        if (val instanceof SQL) {
+            const result = val.toSqlString();
+            sql.push(`${key}=${result.query}`);
+            values.push(...result.values);
+        }
+        else {
+            sql.push(`${key}=?`);
+            values.push(val);
+        }
+    }
+    // const sql = `set ${Object.entries(params)
+    //   .map(([key, val]) => {
+    //     if (val instanceof SQL) {
+    //       console.log(val.toSqlString());
+    //     }
+    //     return `${key}=${val instanceof SQL ? val.toSqlString() : "?"}`;
+    //   })
+    //   .join(",")}`;
+    // const values = Object.values(params).filter((val) => {
+    //   return !(val instanceof SQL);
+    // }) as Primitive[];
+    return ["set " + sql.join(","), values];
 }
 function and(...params) {
     const statement = "(" + params.map((p) => p[0]).join(" and ") + ")";
@@ -108,6 +127,9 @@ function eq(key, value) {
     return [`${key}=?`, value];
 }
 class QueryBuilder {
+    constructor() {
+        this.connection = QueryBuilder.connection;
+    }
     // constructor(connection: Connection) {
     //   this.connection = connection;
     // }

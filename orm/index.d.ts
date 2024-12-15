@@ -4,13 +4,13 @@ export declare function setupDatabase(connection: Connection | Promise<Connectio
 declare class SQL {
     private strings;
     private values;
-    constructor(strings: TemplateStringsArray, values: (Primitive | Primitive[] | SQL)[]);
+    constructor(strings: TemplateStringsArray, values: (Primitive | SQL)[]);
     toSqlString(): {
         query: string;
-        values: (Primitive | Primitive[])[];
+        values: Primitive[];
     };
 }
-export declare function sql(strings: TemplateStringsArray, ...values: (Primitive | SQL | Primitive[])[]): SQL;
+export declare function sql(strings: TemplateStringsArray, ...values: (Primitive | SQL)[]): SQL;
 export declare function from(params: string): string[];
 export declare function where(params: [string, Primitive[] | Primitive] | SQL): [string, Primitive[]];
 export declare function orderBy(params: {
@@ -31,6 +31,7 @@ type QueryPromise<T extends Query, R extends any = Promise<any>> = Promise<any> 
 };
 export declare class QueryBuilder {
     static connection: Connection;
+    connection: Connection;
     select(fields: Array<string>): {
         from: (table: string) => Promise<any> & {
             where: (params: any) => QueryPromise<"orderBy", Promise<any>>;
