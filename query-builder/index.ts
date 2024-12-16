@@ -112,17 +112,6 @@ export function set(params: { [k in string]: SQL | Primitive }): [
       values.push(val);
     }
   }
-  // const sql = `set ${Object.entries(params)
-  //   .map(([key, val]) => {
-  //     if (val instanceof SQL) {
-  //       console.log(val.toSqlString());
-  //     }
-  //     return `${key}=${val instanceof SQL ? val.toSqlString() : "?"}`;
-  //   })
-  //   .join(",")}`;
-  // const values = Object.values(params).filter((val) => {
-  //   return !(val instanceof SQL);
-  // }) as Primitive[];
 
   return ["set " + sql.join(","), values];
 }
@@ -154,9 +143,6 @@ type QueryPromise<
 export class QueryBuilder {
   static connection: Connection;
   connection = QueryBuilder.connection;
-  // constructor(connection: Connection) {
-  //   this.connection = connection;
-  // }
 
   select(fields: Array<string>) {
     let resolveFn: (value: unknown) => void;
@@ -218,7 +204,7 @@ export class QueryBuilder {
           values = Object.values(data);
           valuePlaceholder = values.map(() => "?").join(",");
         }
-        console.log("this", this);
+
         return QueryBuilder.connection.execute(
           `insert into ${table} (${columns.join(",")}) values (${valuePlaceholder})`,
           values,

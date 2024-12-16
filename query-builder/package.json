@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "watch": "../watcher/bin/watch.js --watch 'index.ts' --exec 'tsc'"
   },
   "exports": {
     "require": "./dist/index.cjs",
