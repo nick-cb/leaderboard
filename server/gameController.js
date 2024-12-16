@@ -76,17 +76,20 @@ async function newGameFromBot({ data }) {
 
   if (queryResult[0] && "insertId" in queryResult[0]) {
     const gameId = queryResult[0].insertId;
-    await connection.query(
-      sql(`
-          insert into cells(game_id, x, y, is_revealed, is_flagged, constant, timestamp)
-          values ${data.trail
-            .map((trail) => {
-              const x = trail.coordinate[0];
-              const y = trail.coordinate[1];
-              return `(${gameId}, ${x},${y},${trail.type === "uncovered"}, ${trail.type === "flagged"},${data.board[y][x]},'${convertDateToSqlDate(new Date(trail.timestamp))}')`;
-            })
-            .join(",")}
-        `).toSqlString(),
+    await db.insert("cells").values(
+      data.trail.map((trail) => {
+        const x = trail.coordinate[0];
+        const y = trail.coordinate[1];
+        return {
+          game_id: gameId,
+          x: x,
+          y: y,
+          is_revealed: trail.type === "uncovered",
+          is_flagged: trail.type === "is_flagged",
+          constant: data.board[y][x],
+          timestamp: new Date(trail.timestamp),
+        };
+      }),
     );
 
     return { gameId };
