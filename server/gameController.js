@@ -1,6 +1,6 @@
 const { MineSweeper } = require("../minesweeper");
 const db = require("./db/db.js");
-const { sql, eq, and, or } = require("../orm/index.js");
+const { sql, eq, and, or } = require("../query-builder/index.js");
 
 /** @type {Array<[gameId, MineSweeper]>} gamePools */
 const gamePool = [];

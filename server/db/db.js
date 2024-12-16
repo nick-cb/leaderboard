@@ -1,5 +1,5 @@
 const mysql = require("mysql2/promise.js");
-const { setupDatabase } = require("../../orm");
+const { setupDatabase } = require("../../query-builder");
 
 async function connectDb() {
   try {
