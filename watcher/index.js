@@ -1,28 +1,47 @@
 const fs = require("fs");
-const { fork, spawn } = require("node:child_process");
+const { fork, spawn, exec } = require("node:child_process");
 const { log } = require("./utils/utils");
+const path = require("node:path");
 
 function watch(args) {
-  let script = args[2];
+  let script = "index.js";
+  const execOptionIdx = args.findIndex((option) => option === "--exec");
+  const isExec = execOptionIdx !== -1;
+  const command = isExec ? args[execOptionIdx + 1] : null;
+  const watchOptionIdx = args.findIndex((option) => option === "--watch");
+  const isWatch = watchOptionIdx !== -1;
+  const pattern = isWatch ? args[watchOptionIdx + 1] : null;
+
   if (!script && fs.existsSync("./index.js")) {
     script = "index.js";
   }
-  const cwd = process.cwd();
 
   let childProcess = fork(script);
-
+  const cwd = process.cwd();
   fs.watch(cwd, { recursive: true }, async (event, filename) => {
     if (filename.includes("node_modules")) {
       return;
     }
-    log(`Detect changes in file ${filename}. Restarting the process.`);
-    try {
-      childProcess.disconnect();
-    } catch (error) {}
-    await kill(childProcess.pid, () => {
-      log(`Restarted process. ${childProcess.pid}`);
-      childProcess = fork(script);
-    });
+    if (pattern && !path.matchesGlob(filename, pattern)) {
+      return;
+    }
+    log(`Detect changes in file ${filename}.`);
+
+    if (!command && script) {
+      log("Restarting the process.");
+      try {
+        childProcess.disconnect();
+      } catch (error) {}
+
+      await kill(childProcess.pid, () => {
+        log(`Restarted process. ${childProcess.pid}`);
+        childProcess = fork(script);
+      });
+    }
+    if (command) {
+      log(`Run command '${command}'`);
+      exec(command);
+    }
   });
   return childProcess;
 }
