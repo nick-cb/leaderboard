@@ -112,12 +112,9 @@ async function revealTile(gameId, { x, y }) {
         and(
           eq("game_id", gameId),
           or(
-            ...tiles.map((tile) => {
-              return and(
-                eq("x", tile.coordinate.x),
-                eq("y", tile.coordinate.y),
-              );
-            }),
+            ...tiles.map((tile) =>
+              and(eq("x", tile.coordinate.x), eq("y", tile.coordinate.y)),
+            ),
           ),
         ),
       );
@@ -126,15 +123,16 @@ async function revealTile(gameId, { x, y }) {
       .set({
         click_count: sql`click_count+1`,
         left_click_count: sql`left_click_count+1`,
+        result: minesweeper.isLost || minesweeper.isWon || null,
       })
       .where(eq("ID", gameId));
   }
-  if (minesweeper.isFinished()) {
-    await db
-      .update("games")
-      .set({ result: minesweeper.isLost || minesweeper.isWon })
-      .where(eq("ID", gameId));
-  }
+  // if (minesweeper.isFinished()) {
+  //   await db
+  //     .update("games")
+  //     .set({ result: minesweeper.isLost || minesweeper.isWon })
+  //     .where(eq("ID", gameId));
+  // }
 
   return minesweeper;
 }
@@ -176,10 +174,11 @@ async function getGameFromPoolOrFromDatabase(gameId) {
   }
 
   const [gameRows, __] = await db
-    .select(["row_count", "col_count"])
+    .select(["row_count", "col_count", "result"])
     .from("games")
     .where(eq("ID", gameId));
   game = gameRows[0];
+  console.log({game})
   if (!game) {
     return null;
   }
