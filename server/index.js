@@ -17,7 +17,6 @@ server.on("request", async (req, res) => {
     return res.end(JSON.stringify(input));
   };
   const authorization = req.headers.authorization;
-  console.log({ authorization });
 
   if (!req.url) {
     res.statusCode = 404;
@@ -146,11 +145,7 @@ server.on("request", async (req, res) => {
     return;
   }
 
-  if (
-    req.method === "POST" &&
-    req.headers["content-type"].toLowerCase() === "application/json" &&
-    url.pathname === "/login"
-  ) {
+  if (req.method === "POST" && url.pathname === "/login") {
     let body;
     req.on("data", (chunk) => {
       if (!body) {
@@ -164,15 +159,22 @@ server.on("request", async (req, res) => {
         res.end("Invalid data type");
         return;
       }
-      const data = JSON.parse(body.toString());
+      const data = new URLSearchParams(body.toString());
+      const username = data.get("username");
+      const password = data.get("password");
+
       try {
-        const payload = await userController.login(data);
-        res.json(payload);
-        return;
+        const payload = await userController.login({ username, password });
+        res.statusCode = 302;
+        res.setHeader("Location", "http://localhost:5173/");
+        res.setHeader("Set-Cookie", `userId=${payload.userId}`);
+        res.end();
       } catch (error) {
+        console.log(error);
         res.json({ error: "Failed to login" });
       }
     });
+    return;
   }
 
   res.statusCode = 404;
