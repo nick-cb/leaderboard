@@ -8,7 +8,7 @@ export default function GameLayout() {
     mutationFn: async () => {
       const url = new URL("http://localhost:8000/game/new");
       url.searchParams.set("mode", "2");
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
       const data = await response.json();
       return data;
     },

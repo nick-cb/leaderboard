@@ -9,14 +9,18 @@ server.on("clientError", (err, socket) => {
 });
 
 server.on("request", async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");
   res.setHeader("Access-Control-Max-Age", 2592000);
   res.json = (input) => {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(input));
   };
-  const authorization = req.headers.authorization;
+  let cookie = req.headers.cookie;
+  cookie = cookie.split("; ").map((c) => c.split("="));
+  const userIdCookie = cookie.find(([key]) => key === "userId");
+  const userId = userIdCookie ? userIdCookie[1] : null;
 
   if (!req.url) {
     res.statusCode = 404;
@@ -60,10 +64,14 @@ server.on("request", async (req, res) => {
     }
     coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
     const id = url.pathname.split("/")[2];
-    const game = await gameController.revealTile(parseInt(id), {
-      x: coordinate[0],
-      y: coordinate[1],
-    });
+    const game = await gameController.revealTile(
+      parseInt(id),
+      parseInt(userId),
+      {
+        x: coordinate[0],
+        y: coordinate[1],
+      },
+    );
 
     res.json({
       id: id,
@@ -167,7 +175,7 @@ server.on("request", async (req, res) => {
         const payload = await userController.login({ username, password });
         res.statusCode = 302;
         res.setHeader("Location", "http://localhost:5173/");
-        res.setHeader("Set-Cookie", `userId=${payload.userId}`);
+        res.setHeader("Set-Cookie", [`userId=${payload.userId}`, `test=test`]);
         res.end();
       } catch (error) {
         console.log(error);

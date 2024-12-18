@@ -11,7 +11,7 @@ export default function Game({ params }: any) {
       }
       const url = new URL(`http://localhost:8000/game/${gameId}/reveal-tile`);
       url.searchParams.set("coordinate", coordinate);
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
       const data = await response.json();
       return data;
     },
@@ -28,7 +28,7 @@ export default function Game({ params }: any) {
       }
       const url = new URL(`http://localhost:8000/game/${gameId}/flag-tile`);
       url.searchParams.set("coordinate", coordinate);
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
       const data = await response.json();
       return data;
     },
@@ -42,7 +42,7 @@ export default function Game({ params }: any) {
     queryFn: async () => {
       const url = new URL(`http://localhost:8000/game/${gameId}`);
       url.searchParams.set("mode", "2");
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: "include" });
       const data = await response.json();
       return data;
     },
