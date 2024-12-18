@@ -1,5 +1,6 @@
 const http = require("node:http");
-const controller = require("./gameController.js");
+const gameController = require("./controllers/gameController.js");
+const userController = require("./controllers/userController.js");
 
 const server = http.createServer();
 
@@ -15,6 +16,8 @@ server.on("request", async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(input));
   };
+  const authorization = req.headers.authorization;
+  console.log({ authorization });
 
   if (!req.url) {
     res.statusCode = 404;
@@ -35,7 +38,7 @@ server.on("request", async (req, res) => {
       return;
     }
 
-    const [gameId, minesweeper] = await controller.newGame({ mode });
+    const [gameId, minesweeper] = await gameController.newGame({ mode });
     res.json({
       id: gameId,
       game: minesweeper.getMaskedBoardAsNumberArray(),
@@ -58,7 +61,7 @@ server.on("request", async (req, res) => {
     }
     coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
     const id = url.pathname.split("/")[2];
-    const game = await controller.revealTile(parseInt(id), {
+    const game = await gameController.revealTile(parseInt(id), {
       x: coordinate[0],
       y: coordinate[1],
     });
@@ -86,7 +89,7 @@ server.on("request", async (req, res) => {
     coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
 
     const id = url.pathname.split("/")[2];
-    const game = await controller.toggleFlagMine(parseInt(id), {
+    const game = await gameController.toggleFlagMine(parseInt(id), {
       x: coordinate[0],
       y: coordinate[1],
     });
@@ -120,7 +123,7 @@ server.on("request", async (req, res) => {
 
       const data = JSON.parse(body.toString());
       try {
-        const result = await controller.newGameFromBot(data);
+        const result = await gameController.newGameFromBot(data);
         res.json(result);
       } catch (error) {
         res.json({ error: "Failed to insert game to database" });
@@ -138,9 +141,38 @@ server.on("request", async (req, res) => {
       return;
     }
     id = parseInt(id);
-    const game = await controller.getGameFromPoolOrFromDatabase(id);
+    const game = await gameController.getGameFromPoolOrFromDatabase(id);
     res.json({ gameId: id, board: game.getMaskedBoardAsNumberArray() });
     return;
+  }
+
+  if (
+    req.method === "POST" &&
+    req.headers["content-type"].toLowerCase() === "application/json" &&
+    url.pathname === "/login"
+  ) {
+    let body;
+    req.on("data", (chunk) => {
+      if (!body) {
+        body = chunk;
+        return;
+      }
+      body += chunk;
+    });
+    req.on("end", async () => {
+      if (!Buffer.isBuffer(body)) {
+        res.end("Invalid data type");
+        return;
+      }
+      const data = JSON.parse(body.toString());
+      try {
+        const payload = await userController.login(data);
+        res.json(payload);
+        return;
+      } catch (error) {
+        res.json({ error: "Failed to login" });
+      }
+    });
   }
 
   res.statusCode = 404;

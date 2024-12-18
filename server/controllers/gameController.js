@@ -1,6 +1,6 @@
-const { MineSweeper } = require("../minesweeper");
-const db = require("./db/db.js");
-const { sql, eq, and, or } = require("../query-builder/index.js");
+const { MineSweeper } = require("../../minesweeper/index.js");
+const db = require("../db/db.js");
+const { sql, eq, and, or } = require("../../query-builder/index.js");
 
 /** @type {Array<[gameId, MineSweeper]>} gamePools */
 const gamePool = [];
@@ -98,7 +98,7 @@ async function newGameFromBot({ data }) {
   throw new Error("Failed to insert game to database");
 }
 
-async function revealTile(gameId, { x, y }) {
+async function revealTile(gameId, userId, { x, y }) {
   const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
   if (minesweeper.isFinished()) {
     return minesweeper;
@@ -124,15 +124,10 @@ async function revealTile(gameId, { x, y }) {
         click_count: sql`click_count+1`,
         left_click_count: sql`left_click_count+1`,
         result: minesweeper.isLost || minesweeper.isWon || null,
+        score: minesweeper.isFinished() ? calculateScore(userId) : null,
       })
       .where(eq("ID", gameId));
   }
-  // if (minesweeper.isFinished()) {
-  //   await db
-  //     .update("games")
-  //     .set({ result: minesweeper.isLost || minesweeper.isWon })
-  //     .where(eq("ID", gameId));
-  // }
 
   return minesweeper;
 }
@@ -178,7 +173,6 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     .from("games")
     .where(eq("ID", gameId));
   game = gameRows[0];
-  console.log({game})
   if (!game) {
     return null;
   }

@@ -26,25 +26,25 @@ export declare function and(...params: Array<any>): (string | any[])[];
 export declare function or(...params: Array<any>): (string | any[])[];
 export declare function eq(key: string, value: Primitive): (string | Primitive)[];
 type Query = "set" | "where" | "orderBy";
-type QueryPromise<T extends Query, R extends any = Promise<any>> = Promise<any> & {
+type QueryPromise<T extends Query, R extends any = Promise<any>> = Promise<R> & {
     [K in T]: (params: any) => R;
 };
 export declare class QueryBuilder {
     static connection: Connection;
     connection: Connection;
     select(fields: Array<string>): {
-        from: (table: string) => Promise<any> & {
-            where: (params: any) => QueryPromise<"orderBy", Promise<any>>;
-        } & {
+        from: (table: string) => Promise<QueryPromise<"orderBy", Promise<[import("mysql2/promise").QueryResult, import("mysql2/promise").FieldPacket[]]>>> & {
+            where: (params: any) => QueryPromise<"orderBy", Promise<[import("mysql2/promise").QueryResult, import("mysql2/promise").FieldPacket[]]>>;
+        } & Promise<Promise<any>> & {
             orderBy: (params: any) => Promise<any>;
         };
     };
     insert(table: string): {
         values: (data: Object) => Promise<[import("mysql2/promise").QueryResult, import("mysql2/promise").FieldPacket[]]>;
     };
-    update(table: string): Promise<any> & {
+    update(table: string): Promise<QueryPromise<"where", Promise<any>>> & {
         set: (params: any) => QueryPromise<"where", Promise<any>>;
-    } & {
+    } & Promise<Promise<any>> & {
         where: (params: any) => Promise<any>;
     };
 }

@@ -136,7 +136,7 @@ type Query = "set" | "where" | "orderBy";
 type QueryPromise<
   T extends Query,
   R extends any = Promise<any>,
-> = Promise<any> & {
+> = Promise<R> & {
   [K in T]: (params: any) => R;
 };
 
@@ -150,7 +150,13 @@ export class QueryBuilder {
     const promise = new Promise((resolve, reject) => {
       resolveFn = resolve;
       rejectFn = reject;
-    }) as QueryPromise<"where", QueryPromise<"orderBy">> &
+    }) as QueryPromise<
+      "where",
+      QueryPromise<
+        "orderBy",
+        ReturnType<typeof QueryBuilder.connection.execute>
+      >
+    > &
       QueryPromise<"orderBy", Promise<any>>;
 
     let sql = [`select ${fields.join(",")}`];
