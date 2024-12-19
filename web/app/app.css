@@ -45,19 +45,16 @@ html {
   transform: rotate(-90deg);
 }
 
-.cell.revealed,
-.cell:active {
+.cell.revealed {
   background: transparent;
   box-shadow: unset;
   border: 0.5px solid #232a32;
 }
 
-.cell.revealed::before,
-.cell:active::before {
+.cell.revealed::before {
   opacity: 0;
 }
-.cell.revealed::after,
-.cell:active:after {
+.cell.revealed::after {
   opacity: 0;
 }
 
@@ -65,7 +62,7 @@ html {
   padding: 4px;
   box-shadow: inset 4px 4px #232a32, inset -4px -4px #6f7880;
   border: 8px solid #474e56;
-  background: #474e56;
+  background: #394048;
 }
 
 .board::before {
