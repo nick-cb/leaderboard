@@ -45,19 +45,16 @@ html {
   transform: rotate(-90deg);
 }
 
-.cell.revealed,
-.cell:active {
+.cell.revealed {
   background: transparent;
   box-shadow: unset;
   border: 0.5px solid #232a32;
 }
 
-.cell.revealed::before,
-.cell:active {
+.cell.revealed::before {
   opacity: 0;
 }
-.cell.revealed::after,
-.cell:active {
+.cell.revealed::after {
   opacity: 0;
 }
 

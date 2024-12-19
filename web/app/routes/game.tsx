@@ -19,6 +19,7 @@ export default function Game({ params }: any) {
     refetchOnReconnect: false,
   });
   const board: any[] = data?.board;
+
   if (!data) {
     console.log({ data });
     return <div>There is no game here</div>;
@@ -26,7 +27,6 @@ export default function Game({ params }: any) {
 
   return (
     <div className={"flex board w-max relative flex-col"}>
-      {/* <button onClick={() => setState(!state)}>ABC</button> */}
       {board.map((row: Array<number | string>, rowNumber) => {
         return <Row key={rowNumber} row={row} y={rowNumber} gameId={gameId} />;
       })}
@@ -61,6 +61,7 @@ const Cell = React.memo(
     gameId: number;
   }) => {
     const { value, coordinate, gameId } = props;
+    const isRevealed = typeof value !== "string";
     const revealTileMutation = useMutation({
       mutationKey: ["reveal-tile"],
       mutationFn: async ({ gameId, coordinate }: any) => {
@@ -104,30 +105,44 @@ const Cell = React.memo(
       });
     }
 
-    function handleClick(event: React.MouseEvent<HTMLDivElement>) {
-      event.currentTarget.classList.add("revealed");
-      const coordinate = event.currentTarget.dataset["coordinate"];
-      revealTileMutation.mutate({
-        gameId: gameId,
-        coordinate: coordinate,
-      });
-    }
-
-    function handleMouseLeave(event: React.MouseEvent<HTMLDivElement>) {
-      if (typeof value === "number" || value === "-") {
-        return;
-      }
-      event.currentTarget.classList.remove("revealed");
-    }
-
     return (
       <div
         data-coordinate={`${coordinate[0]},${coordinate[1]}`}
-        onClick={handleClick}
         onContextMenu={handleContextMenu}
-        onMouseLeave={handleMouseLeave}
+        onMouseEnter={(event) => {
+          if (isRevealed) {
+            return;
+          }
+          if (event.buttons === 1) {
+            event.currentTarget.classList.add("revealed");
+          }
+        }}
+        onMouseLeave={(event) => {
+          if (isRevealed) {
+            return;
+          }
+          event.currentTarget.classList.remove("revealed");
+        }}
+        onMouseDown={(event) => {
+          if (isRevealed) {
+            return;
+          }
+          if (event.buttons === 1) {
+            event?.currentTarget.classList.add("revealed");
+          }
+        }}
+        onMouseUp={(event) => {
+          if (isRevealed || event.button === 2) {
+            return;
+          }
+          const coordinate = event.currentTarget.dataset["coordinate"];
+          revealTileMutation.mutate({
+            gameId: gameId,
+            coordinate: coordinate,
+          });
+        }}
         className={
-          "cell w-8 h-8 text-center cursor-default bg-[#4D545C]" +
+          "cell w-8 h-8 text-center cursor-default bg-[#4D545C] select-none" +
           (value !== "+" && value !== "-" ? " revealed " : "")
         }
         style={{
