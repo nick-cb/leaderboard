@@ -1,3 +1,97 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #181a1b;
+}
+
+.cell {
+  width: 24px;
+  height: 24px;
+  background: #4d545c;
+  box-shadow: inset 3px 3px #6f7880, inset -3px -3px #232a32;
+  position: relative;
+}
+
+.cell::before {
+  content: "";
+  display: block;
+  width: 3px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  bottom: -3px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.cell::after {
+  content: "";
+  display: block;
+  width: 3px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  top: -3px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
+}
+
+.cell.revealed,
+.cell:active {
+  background: transparent;
+  box-shadow: unset;
+  border: 0.5px solid #232a32;
+}
+
+.cell.revealed::before,
+.cell:active::before {
+  opacity: 0;
+}
+.cell.revealed::after,
+.cell:active:after {
+  opacity: 0;
+}
+
+.board {
+  padding: 4px;
+  box-shadow: inset 4px 4px #232a32, inset -4px -4px #6f7880;
+  border: 8px solid #474e56;
+  background: #474e56;
+}
+
+.board::before {
+  content: "";
+  display: block;
+  width: 4px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #6f7880;
+  bottom: -4px;
+  left: 0px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.board::after {
+  content: "";
+  display: block;
+  width: 4px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #6f7880;
+  top: -4px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
+}

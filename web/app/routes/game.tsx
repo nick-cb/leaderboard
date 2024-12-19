@@ -72,7 +72,7 @@ export default function Game({ params }: any) {
   }
 
   return (
-    <div className={"flex"}>
+    <div className={"flex board w-max relative"}>
       {board.map((row: Array<number | string>, rowNumber) => {
         return (
           <div key={rowNumber}>
@@ -83,7 +83,10 @@ export default function Game({ params }: any) {
                   data-coordinate={`${colNumber},${rowNumber}`}
                   onClick={handleClick}
                   onContextMenu={handleContextMenu}
-                  className={"w-8 h-8 border border-black text-center"}
+                  className={
+                    "cell w-8 h-8 text-center cursor-default bg-[#4D545C]" +
+                    (col !== "+" && col !== "-" ? " revealed " : "")
+                  }
                   style={{
                     color:
                       col === 1
@@ -105,7 +108,15 @@ export default function Game({ params }: any) {
                         : "",
                   }}
                 >
-                  {col === "+" ? "🚩" : col === 0 ? "" : col === 9 ? "💣" : col}
+                  {col === "+"
+                    ? "🚩"
+                    : col === 0
+                    ? ""
+                    : col === 9
+                    ? "💣"
+                    : col === "-"
+                    ? ""
+                    : col}
                 </div>
               );
             })}
