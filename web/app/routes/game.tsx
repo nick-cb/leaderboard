@@ -95,16 +95,6 @@ const Cell = React.memo(
       },
     });
 
-    function handleClick(event: React.MouseEvent<HTMLDivElement>) {
-      const coordinate = event.currentTarget.dataset["coordinate"];
-      // event.currentTarget.classList.add("revealed");
-      revealTileMutation.mutate({
-        gameId: gameId,
-        coordinate: coordinate,
-      });
-      // event.currentTarget.classList.remove("revealed");
-    }
-
     function handleContextMenu(event: React.MouseEvent<HTMLDivElement>) {
       const coordinate = event.currentTarget.dataset["coordinate"];
       event.preventDefault();
@@ -114,32 +104,28 @@ const Cell = React.memo(
       });
     }
 
-    function handleMouseDown(event: React.MouseEvent<HTMLDivElement>) {
-      if (event.button !== 0) {
-        return;
-      }
+    function handleClick(event: React.MouseEvent<HTMLDivElement>) {
       event.currentTarget.classList.add("revealed");
+      const coordinate = event.currentTarget.dataset["coordinate"];
+      revealTileMutation.mutate({
+        gameId: gameId,
+        coordinate: coordinate,
+      });
     }
 
-    function handleMouseUp(event: React.MouseEvent<HTMLDivElement>) {
-      event.preventDefault();
-      if (event.button !== 0) {
+    function handleMouseLeave(event: React.MouseEvent<HTMLDivElement>) {
+      if (typeof value === "number" || value === "-") {
         return;
       }
-      if (event.currentTarget !== event.target) {
-        console.log("up not");
-        event.currentTarget.classList.remove("revealed");
-        return;
-      }
-      handleClick(event);
+      event.currentTarget.classList.remove("revealed");
     }
 
     return (
       <div
         data-coordinate={`${coordinate[0]},${coordinate[1]}`}
+        onClick={handleClick}
         onContextMenu={handleContextMenu}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         className={
           "cell w-8 h-8 text-center cursor-default bg-[#4D545C]" +
           (value !== "+" && value !== "-" ? " revealed " : "")
