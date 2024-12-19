@@ -17,7 +17,7 @@ server.on("request", async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(input));
   };
-  let cookie = req.headers.cookie;
+  let cookie = req.headers.cookie || '';
   cookie = cookie.split("; ").map((c) => c.split("="));
   const userIdCookie = cookie.find(([key]) => key === "userId");
   const userId = userIdCookie ? userIdCookie[1] : null;
