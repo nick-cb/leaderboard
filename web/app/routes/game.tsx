@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { useMemo } from "react";
+import React from "react";
 import { useNavigate } from "react-router";
 import { queryClient } from "~/root";
 
@@ -47,7 +47,23 @@ export default function Game({ params }: any) {
     ];
 
     return neighbors.filter((n) => {
-      return board[n.y][n.x] === "-";
+      return board[n.y]?.[n.x] && board[n.y][n.x] === "-";
+    });
+  }
+  function getFlaggedNeighbors({ x, y }: { x: number; y: number }) {
+    const neighbors = [
+      { y: y - 1, x: x - 1 },
+      { y: y - 1, x: x },
+      { y: y - 1, x: x + 1 },
+      { y: y, x: x - 1 },
+      { y: y, x: x + 1 },
+      { y: y + 1, x: x - 1 },
+      { y: y + 1, x: x },
+      { y: y + 1, x: x + 1 },
+    ];
+
+    return neighbors.filter((n) => {
+      return board[n.y]?.[n.x] && board[n.y][n.x] === "+";
     });
   }
 
@@ -75,46 +91,27 @@ export default function Game({ params }: any) {
         </button>
       </div>
       <div className={"flex board w-max relative flex-col"}>
-        {board.map((row: Array<number | string>, rowNumber) => {
+        {board.map((row: Array<number | string>, y) => {
           return (
-            <Row
-              key={rowNumber}
-              row={row}
-              y={rowNumber}
-              gameId={gameId}
-              getRevealableNeighbors={getRevealableNeighbors}
-            />
+            <div key={y} className={"flex"}>
+              {row.map((col, x) => {
+                const revealableNeigbors = getRevealableNeighbors({ y, x });
+                const flaggedNeighbors = getFlaggedNeighbors({ y, x });
+                return (
+                  <Cell
+                    key={x}
+                    value={col}
+                    coordinate={[x, y]}
+                    gameId={gameId}
+                    revealableNeigbors={revealableNeigbors}
+                    flaggedNeighbors={flaggedNeighbors}
+                  />
+                );
+              })}
+            </div>
           );
         })}
       </div>
-    </div>
-  );
-}
-
-type RowProps = {
-  row: Array<string | number>;
-  y: number;
-  gameId: number;
-  getRevealableNeighbors: (param: {
-    x: number;
-    y: number;
-  }) => { x: number; y: number }[];
-};
-function Row(props: RowProps) {
-  const { row, gameId, y, getRevealableNeighbors } = props;
-  return (
-    <div key={y} className={"flex"}>
-      {row.map((col, x) => {
-        return (
-          <Cell
-            key={y + "" + x}
-            value={col}
-            coordinate={[x, y]}
-            gameId={gameId}
-            getRevealableNeighbors={getRevealableNeighbors}
-          />
-        );
-      })}
     </div>
   );
 }
@@ -123,13 +120,12 @@ type CellProps = {
   value: string | number;
   coordinate: [number, number];
   gameId: number;
-  getRevealableNeighbors: (param: {
-    x: number;
-    y: number;
-  }) => { x: number; y: number }[];
+  revealableNeigbors: { x: number; y: number }[];
+  flaggedNeighbors: { x: number; y: number }[];
 };
 function Cell(props: CellProps) {
-  const { value, coordinate, gameId, getRevealableNeighbors } = props;
+  const { value, coordinate, gameId, revealableNeigbors, flaggedNeighbors } =
+    props;
   const isRevealed = typeof value !== "string";
   const revealTileMutation = useMutation({
     mutationKey: ["reveal-tile"],
@@ -220,11 +216,7 @@ function Cell(props: CellProps) {
           let coordinate: any = event.currentTarget.dataset["coordinate"];
           coordinate = coordinate?.split(",");
           coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
-          const neighbors = getRevealableNeighbors({
-            x: coordinate[0],
-            y: coordinate[1],
-          });
-          for (const { x, y } of neighbors) {
+          for (const { x, y } of revealableNeigbors) {
             const node = document.querySelector(
               `[data-coordinate="${x},${y}"]`
             );
@@ -242,35 +234,35 @@ function Cell(props: CellProps) {
         if (event.button === 2 || value === "+") {
           return;
         }
-        const coordinate = event.currentTarget.dataset["coordinate"];
+        let coordinate: any = event.currentTarget.dataset["coordinate"];
 
-        if (isRevealed) {
-          let coordinate: any = event.currentTarget.dataset["coordinate"];
-          coordinate = coordinate?.split(",");
-          coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
-          const neighbors = getRevealableNeighbors({
-            x: coordinate[0],
-            y: coordinate[1],
-          });
-          for (const { x, y } of neighbors) {
-            const node = document.querySelector(
-              `[data-coordinate="${x},${y}"]`
-            );
-            if (node instanceof HTMLDivElement) {
-              node.classList.remove("revealed");
+        if (isRevealed && revealableNeigbors.length) {
+          if (flaggedNeighbors.length === value) {
+            revealAdjTilesMutation.mutate({
+              gameId: gameId,
+              coordinate: coordinate,
+            });
+          } else {
+            coordinate = coordinate?.split(",");
+            coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
+            for (const { x, y } of revealableNeigbors) {
+              const node = document.querySelector(
+                `[data-coordinate="${x},${y}"]`
+              );
+              if (node instanceof HTMLDivElement) {
+                node.classList.remove("revealed");
+              }
             }
           }
-          revealAdjTilesMutation.mutate({
-            gameId: gameId,
-            coordinate: `${coordinate[0]},${coordinate[1]}`,
-          });
           return;
         }
 
-        revealTileMutation.mutate({
-          gameId: gameId,
-          coordinate: coordinate,
-        });
+        if (!isRevealed) {
+          revealTileMutation.mutate({
+            gameId: gameId,
+            coordinate: coordinate,
+          });
+        }
       }}
       className={
         "cell w-8 h-8 text-center cursor-default bg-[#4D545C] select-none font-extrabold" +
