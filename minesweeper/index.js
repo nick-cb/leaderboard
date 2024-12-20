@@ -221,9 +221,38 @@ class MineSweeper {
     return revealedTiles;
   }
 
+  revealAdjTiles({ x, y }) {
+    const tile = this.board[y][x];
+    if (!tile.isRevealed || tile.isFlagged) return;
+
+    const flaggedTiles = tile.neighbors.filter(({ x, y }) => {
+      return this.board[y][x].isFlagged;
+    });
+    if (flaggedTiles.length !== tile.constant) {
+      return [];
+    }
+
+    this.leftClicks += 1;
+    let revealedTiles = [];
+    for (const { x, y } of tile.neighbors) {
+      if (tile.isFlagged) {
+        continue;
+      }
+      revealedTiles.push(...this.#revealTile({ x, y }));
+    }
+    this.revealedTileCount += revealedTiles.length;
+    this.trail.push(...revealedTiles);
+    if (this.shouldEndGame(revealedTiles) !== undefined) {
+      this.finishGame(this.shouldEndGame(revealedTiles));
+    }
+
+    return revealedTiles;
+  }
+
   toggleFlagTile({ x, y }) {
     this.rightClicks += 1;
     const tile = this.board[y][x];
+    console.log({ tile });
     if (!tile.isFlagable()) return;
 
     tile.isFlagged = !tile.isFlagged;
@@ -256,7 +285,7 @@ class MineSweeper {
   }
 
   isFinished() {
-    return this.result !== undefined;
+    return typeof this.result === "number";
   }
 
   calculate3bv() {

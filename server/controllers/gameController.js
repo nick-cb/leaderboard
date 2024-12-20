@@ -135,6 +135,42 @@ async function revealTile(gameId, userId, { x, y }) {
   return minesweeper;
 }
 
+async function revealAdjTiles(gameId, userId, { x, y }) {
+  const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
+  if (minesweeper.isFinished()) {
+    return minesweeper;
+  }
+  const tiles = minesweeper.revealAdjTiles({ x, y });
+  if (tiles.length) {
+    await db
+      .update("cells")
+      .set({ is_revealed: true })
+      .where(
+        and(
+          eq("game_id", gameId),
+          or(...tiles.map((tile) => and(eq("x", tile.x), eq("y", tile.y)))),
+        ),
+      );
+    await db
+      .update("games")
+      .set({
+        click_count: sql`click_count+1`,
+        left_click_count: sql`left_click_count+1`,
+        result: minesweeper.result ?? null,
+        end_time: minesweeper.isFinished()
+          ? new Date(minesweeper.endTime)
+          : sql`end_time`,
+      })
+      .where(eq("ID", gameId));
+    if (minesweeper.isFinished() && minesweeper.result === 1) {
+      const score = await calculateScore(userId, minesweeper);
+      await db.update("users").set({ trophies: score }).where(eq("ID", userId));
+    }
+  }
+
+  return minesweeper;
+}
+
 async function toggleFlagMine(gameId, { x, y }) {
   const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
   if (minesweeper.isFinished()) {
@@ -205,7 +241,7 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     })),
   });
   game.startTime = startTime;
-  game.result=result;
+  game.result = result;
 
   gamePool.push([gameId, game]);
   return game;
@@ -294,6 +330,7 @@ module.exports = {
   newGame,
   newGameFromBot,
   revealTile,
+  revealAdjTiles,
   toggleFlagMine,
   getGameFromPoolOrFromDatabase,
 };

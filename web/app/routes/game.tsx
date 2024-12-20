@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { queryClient } from "~/root";
 
@@ -34,6 +34,22 @@ export default function Game({ params }: any) {
   });
   const board: any[] = data?.board;
   const result = data?.result;
+  function getRevealableNeighbors({ x, y }: { x: number; y: number }) {
+    const neighbors = [
+      { y: y - 1, x: x - 1 },
+      { y: y - 1, x: x },
+      { y: y - 1, x: x + 1 },
+      { y: y, x: x - 1 },
+      { y: y, x: x + 1 },
+      { y: y + 1, x: x - 1 },
+      { y: y + 1, x: x },
+      { y: y + 1, x: x + 1 },
+    ];
+
+    return neighbors.filter((n) => {
+      return board[n.y][n.x] === "-";
+    });
+  }
 
   if (!data) {
     return <div>There is no game here</div>;
@@ -53,13 +69,21 @@ export default function Game({ params }: any) {
           }}
           className="new-game-btn text-2xl border border-[#1E262E] px-2 py-1 cursor-default"
         >
-          <span className="block">{result === 0 ? "😵" : result === 1 ? "🥳" : "😊"}</span>
+          <span className="block">
+            {result === 0 ? "😵" : result === 1 ? "🥳" : "😊"}
+          </span>
         </button>
       </div>
       <div className={"flex board w-max relative flex-col"}>
         {board.map((row: Array<number | string>, rowNumber) => {
           return (
-            <Row key={rowNumber} row={row} y={rowNumber} gameId={gameId} />
+            <Row
+              key={rowNumber}
+              row={row}
+              y={rowNumber}
+              gameId={gameId}
+              getRevealableNeighbors={getRevealableNeighbors}
+            />
           );
         })}
       </div>
@@ -71,9 +95,13 @@ type RowProps = {
   row: Array<string | number>;
   y: number;
   gameId: number;
+  getRevealableNeighbors: (param: {
+    x: number;
+    y: number;
+  }) => { x: number; y: number }[];
 };
 function Row(props: RowProps) {
-  const { row, gameId, y } = props;
+  const { row, gameId, y, getRevealableNeighbors } = props;
   return (
     <div key={y} className={"flex"}>
       {row.map((col, x) => {
@@ -83,6 +111,7 @@ function Row(props: RowProps) {
             value={col}
             coordinate={[x, y]}
             gameId={gameId}
+            getRevealableNeighbors={getRevealableNeighbors}
           />
         );
       })}
@@ -94,9 +123,13 @@ type CellProps = {
   value: string | number;
   coordinate: [number, number];
   gameId: number;
+  getRevealableNeighbors: (param: {
+    x: number;
+    y: number;
+  }) => { x: number; y: number }[];
 };
 function Cell(props: CellProps) {
-  const { value, coordinate, gameId } = props;
+  const { value, coordinate, gameId, getRevealableNeighbors } = props;
   const isRevealed = typeof value !== "string";
   const revealTileMutation = useMutation({
     mutationKey: ["reveal-tile"],
@@ -114,7 +147,24 @@ function Cell(props: CellProps) {
       queryClient.setQueryData(["download-game", gameId], data);
     },
   });
-
+  const revealAdjTilesMutation = useMutation({
+    mutationKey: ["reveal-adj-tile"],
+    mutationFn: async ({ gameId, coordinate }: any) => {
+      if (!coordinate) {
+        throw new Error("Invalid params");
+      }
+      const url = new URL(
+        `http://localhost:8000/game/${gameId}/reveal-adj-tiles`
+      );
+      url.searchParams.set("coordinate", coordinate);
+      const response = await fetch(url, { credentials: "include" });
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["download-game", gameId], data);
+    },
+  });
   const flagTileMutation = useMutation({
     mutationKey: ["flag-tile"],
     mutationFn: async ({ gameId, coordinate }: any) => {
@@ -149,7 +199,7 @@ function Cell(props: CellProps) {
       data-coordinate={`${coordinate[0]},${coordinate[1]}`}
       onContextMenu={handleContextMenu}
       onMouseEnter={(event) => {
-        if (isRevealed || value === '+') {
+        if (isRevealed || value === "+") {
           return;
         }
         if (event.buttons === 1) {
@@ -163,7 +213,25 @@ function Cell(props: CellProps) {
         event.currentTarget.classList.remove("revealed");
       }}
       onMouseDown={(event) => {
-        if (isRevealed || value === "+") {
+        if (value === "+") {
+          return;
+        }
+        if (isRevealed) {
+          let coordinate: any = event.currentTarget.dataset["coordinate"];
+          coordinate = coordinate?.split(",");
+          coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
+          const neighbors = getRevealableNeighbors({
+            x: coordinate[0],
+            y: coordinate[1],
+          });
+          for (const { x, y } of neighbors) {
+            const node = document.querySelector(
+              `[data-coordinate="${x},${y}"]`
+            );
+            if (node instanceof HTMLDivElement) {
+              node.classList.add("revealed");
+            }
+          }
           return;
         }
         if (event.buttons === 1) {
@@ -171,10 +239,34 @@ function Cell(props: CellProps) {
         }
       }}
       onMouseUp={(event) => {
-        if (isRevealed || event.button === 2 || value === "+") {
+        if (event.button === 2 || value === "+") {
           return;
         }
         const coordinate = event.currentTarget.dataset["coordinate"];
+
+        if (isRevealed) {
+          let coordinate: any = event.currentTarget.dataset["coordinate"];
+          coordinate = coordinate?.split(",");
+          coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
+          const neighbors = getRevealableNeighbors({
+            x: coordinate[0],
+            y: coordinate[1],
+          });
+          for (const { x, y } of neighbors) {
+            const node = document.querySelector(
+              `[data-coordinate="${x},${y}"]`
+            );
+            if (node instanceof HTMLDivElement) {
+              node.classList.remove("revealed");
+            }
+          }
+          revealAdjTilesMutation.mutate({
+            gameId: gameId,
+            coordinate: `${coordinate[0]},${coordinate[1]}`,
+          });
+          return;
+        }
+
         revealTileMutation.mutate({
           gameId: gameId,
           coordinate: coordinate,

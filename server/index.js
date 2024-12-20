@@ -81,6 +81,39 @@ server.on("request", async (req, res) => {
     return;
   }
 
+  if (/\/game\/\d+\/reveal-adj-tiles/.test(url.pathname)) {
+    let coordinate = url.searchParams.get("coordinate");
+    if (!coordinate) {
+      res.json({ error: "Please pass in coordinate" });
+      return;
+    }
+    coordinate = coordinate.split(",");
+    if (isNaN(coordinate[0]) || isNaN(coordinate[1])) {
+      res.json({
+        error: "Invalid coordinate, the format must be <number>,<number>",
+      });
+      return;
+    }
+    coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
+    const id = url.pathname.split("/")[2];
+
+    const game = await gameController.revealAdjTiles(
+      parseInt(id),
+      parseInt(userId),
+      {
+        x: coordinate[0],
+        y: coordinate[1],
+      },
+    );
+
+    res.json({
+      id: id,
+      result: game.result,
+      board: game.getMaskedBoardAs2DArray(),
+    });
+    return;
+  }
+
   if (/\/game\/\d+\/flag-tile/.test(url.pathname)) {
     let coordinate = url.searchParams.get("coordinate");
     if (!coordinate) {
