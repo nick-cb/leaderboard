@@ -127,6 +127,9 @@ function Cell(props: CellProps) {
   });
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement>) {
+    if (isRevealed) {
+      return;
+    }
     const coordinate = event.currentTarget.dataset["coordinate"];
     event.preventDefault();
     flagTileMutation.mutate({
@@ -162,7 +165,7 @@ function Cell(props: CellProps) {
         }
       }}
       onMouseUp={(event) => {
-        if (isRevealed || event.button === 2) {
+        if (isRevealed || event.button === 2 || value === "+") {
           return;
         }
         const coordinate = event.currentTarget.dataset["coordinate"];
@@ -172,7 +175,7 @@ function Cell(props: CellProps) {
         });
       }}
       className={
-        "cell w-8 h-8 text-center cursor-default bg-[#4D545C] select-none" +
+        "cell w-8 h-8 text-center cursor-default bg-[#4D545C] select-none font-extrabold" +
         (value !== "+" && value !== "-" ? " revealed " : "")
       }
       style={{
@@ -184,15 +187,15 @@ function Cell(props: CellProps) {
             : value === 3
             ? "#F78"
             : value === 4
-            ? "#172554"
-            : value === "5"
-            ? "#4c0519"
+            ? "#EE88FE"
+            : value === 5
+            ? "#DA2"
             : value === 6
-            ? "#06b6d4"
+            ? "#6CC"
             : value === 7
-            ? "#000"
+            ? "#999"
             : value === 8
-            ? "#6b7280"
+            ? "#CFD8E0"
             : "",
       }}
     >

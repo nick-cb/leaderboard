@@ -1,4 +1,4 @@
-const { MineSweeper } = require("../../minesweeper/index.js");
+const { MineSweeper } = require("../../minesweeper/index-old.js");
 const db = require("../db/db.js");
 const { sql, eq, and, or } = require("../../query-builder/index.js");
 
@@ -118,6 +118,7 @@ async function revealTile(gameId, userId, { x, y }) {
           ),
         ),
       );
+    // console.log({isWon: minesweeper.isWon, isLost: minesweeper.isLost})
     await db
       .update("games")
       .set({
@@ -129,7 +130,19 @@ async function revealTile(gameId, userId, { x, y }) {
           : sql`end_time`,
       })
       .where(eq("ID", gameId));
+    // let totalRevealed = 0;
+    // for (const row of minesweeper.getMaskedBoardAsNumberArray()) {
+    //   for (const cell of row) {
+    //     if (isNaN(cell)) {
+    //       continue;
+    //     }
+    //     totalRevealed += 1;
+    //   }
+    // }
+    // console.log({ totalRevealed });
+    // minesweeper.printMaskedBoard();
     if (minesweeper.isFinished() && minesweeper.isWon) {
+      console.log("finished", minesweeper);
       const score = await calculateScore(userId);
       await db.update("users").set({ trophies: score }).where(eq("ID", userId));
     }
@@ -175,7 +188,14 @@ async function getGameFromPoolOrFromDatabase(gameId) {
   }
 
   const [gameRows, __] = await db
-    .select(["row_count", "col_count", "result", "start_time", "end_time"])
+    .select([
+      "row_count",
+      "col_count",
+      "result",
+      "start_time",
+      "end_time",
+      "result",
+    ])
     .from("games")
     .where(eq("ID", gameId));
   game = gameRows[0];
@@ -188,8 +208,13 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     .from("cells")
     .where(eq("game_id", gameId))
     .orderBy({ x: 1, y: 1 });
+  console.log({
+    revealedCells: cellRows.filter((cell) => !!parseInt(cell.is_revealed))
+      .length,
+  });
 
   const startTime = game.startTime;
+  const result = game.result;
   game = MineSweeper.from({
     rows: game.row_count,
     cols: game.col_count,
@@ -202,6 +227,13 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     })),
   });
   game.startTime = startTime;
+  if (result === 1) {
+    game.isWon = true;
+  }
+  if (result === 0) {
+    game.isLost = true;
+  }
+  console.log({ game });
 
   gamePool.push([gameId, game]);
   return game;

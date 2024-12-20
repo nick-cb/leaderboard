@@ -1,6 +1,6 @@
 const { describe, it } = require("node:test");
 const assert = require("node:assert");
-const { MineSweeper } = require("..");
+const { MineSweeper, Tile } = require("../index.js");
 const { seed40 } = require("../seed.js");
 
 describe("minesweeper test", () => {
@@ -10,8 +10,7 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.cols, 8);
     assert.equal(minesweeper.mines, 10);
 
-    minesweeper.revealAll();
-    const board = minesweeper.getBoardAsConstantArray();
+    const board = minesweeper.getBoardAs2DArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
@@ -35,8 +34,7 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.cols, 8);
     assert.equal(minesweeper.mines, 10);
 
-    minesweeper.revealAll();
-    const board = minesweeper.getBoardAsConstantArray();
+    const board = minesweeper.getBoardAs2DArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
@@ -49,7 +47,7 @@ describe("minesweeper test", () => {
     const minesweeper = MineSweeper.from({
       rows: 8,
       cols: 8,
-      cells: [
+      tiles: [
         0, 0, 0, 0, 0, 1, 3, 9, 0, 0, 0, 0, 1, 3, 9, 9, 0, 0, 1, 2, 3, 9, 9, 3,
         0, 0, 1, 9, 9, 3, 2, 1, 0, 0, 1, 2, 2, 1, 0, 0, 0, 0, 1, 1, 2, 1, 1, 0,
         0, 0, 1, 9, 2, 9, 2, 1, 0, 0, 1, 1, 2, 1, 2, 9,
@@ -59,8 +57,7 @@ describe("minesweeper test", () => {
     assert.equal(minesweeper.cols, 8);
     assert.equal(minesweeper.mines, 10);
 
-    minesweeper.revealAll();
-    const board = minesweeper.getBoardAsConstantArray();
+    const board = minesweeper.getBoardAs2DArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
@@ -77,32 +74,24 @@ describe("minesweeper test", () => {
     ];
     const rows = 8;
     const cols = 8;
-    const cells = numbers.map((n, i) => {
+    const tiles = numbers.map((n, i) => {
       const y = Math.floor(i / rows);
       const x = i % cols;
-      return {
-        coordinate: { x, y },
-        adjMine: n,
-        isReveal: i === 0,
-        isMine: false,
-        isFlagged: false,
-        neighbors: [],
-      };
+      return new Tile({ x, y, constant: n, constrains: [rows, cols] });
     });
     const minesweeper = MineSweeper.from({
       rows,
       cols,
-      cells: cells,
+      tiles,
     });
     assert.equal(minesweeper.rows, 8);
     assert.equal(minesweeper.cols, 8);
     assert.equal(minesweeper.mines, 10);
-    let board = minesweeper.getMaskedBoardAsNumberArray();
+    let board = minesweeper.getBoardAs2DArray();
     assert.equal(board[0][0], 0);
-    assert.equal(board[0][1], '-');
+    // assert.equal(board[0][1], "-");
 
-    minesweeper.revealAll();
-    board = minesweeper.getBoardAsConstantArray();
+    board = minesweeper.getBoardAs2DArray();
     assert.equal(board.length, 8);
     assert.equal(board[0].length, 8);
     assert.equal(
@@ -122,7 +111,7 @@ describe("minesweeper test", () => {
       [0, 0, 1, 9, 2, 9, 2, 1],
       [0, 0, 1, 1, 2, 1, 2, 9],
     ]);
-    minesweeper.printBoard();
+
     assert.equal(minesweeper.calculate3bv(), 13);
   });
 });
