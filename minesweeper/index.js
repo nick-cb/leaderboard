@@ -134,7 +134,7 @@ class MineSweeper {
           x,
           y,
           constant: 0,
-          constrains: [this.rows, this.cols],
+          constrains: [-1, this.cols],
         });
       }
     }
@@ -161,13 +161,15 @@ class MineSweeper {
   }
 
   updateNonMineTiles() {
-    console.log({ rows: this.rows, cols: this.cols });
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.cols; x++) {
         const tile = this.board[y][x];
         if (tile.constant === 9) {
-          for (const neighbor of tile.neighbors) {
-            console.log({ neighbor, tile: this.board[neighbor.y][neighbor.x] });
+          for (const { x, y } of tile.neighbors) {
+            const neighbor = this.board[y][x];
+            if (neighbor.constant === 9) {
+              continue;
+            }
             this.board[neighbor.y][neighbor.x].constant += 1;
           }
         }
@@ -260,10 +262,8 @@ class MineSweeper {
 
             visited[y][x] = 1;
             totalSkip += 1;
-            console.log(this.board[y][x].neighbors);
             if (this.board[y][x].constant === 0) {
               for (const neighbor of this.board[y][x].neighbors) {
-                console.log(neighbor);
                 visit(neighbor);
               }
             }
@@ -273,7 +273,6 @@ class MineSweeper {
       }
     }
 
-    console.log({ bv3, totalSkip, rows: this.rows, cols: this.cols, visited });
     return this.cols * this.rows - totalSkip - this.mines + bv3;
   }
 
