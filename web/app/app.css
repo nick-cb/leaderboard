@@ -59,8 +59,8 @@ html {
 }
 
 .board {
-  padding: 4px;
-  box-shadow: inset 4px 4px #232a32, inset -4px -4px #6f7880;
+  padding: 6px;
+  box-shadow: inset 6px 6px #232a32, inset -6px -6px #6f7880;
   border: 8px solid #474e56;
   background: #394048;
 }
@@ -68,11 +68,11 @@ html {
 .board::before {
   content: "";
   display: block;
-  width: 4px;
+  width: 6px;
   aspect-ratio: 1;
   clip-path: polygon(0 0, 100% 100%, 0 100%);
   background: #6f7880;
-  bottom: -4px;
+  bottom: -6px;
   left: 0px;
   position: absolute;
   transform-origin: top left;
@@ -82,13 +82,88 @@ html {
 .board::after {
   content: "";
   display: block;
-  width: 4px;
+  width: 6px;
   aspect-ratio: 1;
   clip-path: polygon(0 0, 100% 100%, 0 100%);
   background: #6f7880;
+  top: -6px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
+}
+
+.panel {
+  padding: 6px;
+  box-shadow: inset 6px 6px #6f7880, inset -6px -6px #232a32;
+  position: relative;
+}
+
+.panel::before {
+  content: "";
+  display: block;
+  width: 6px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  bottom: -6px;
+  left: 0px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.panel::after {
+  content: "";
+  display: block;
+  width: 6px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  top: -6px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
+}
+
+.new-game-btn {
+  box-shadow: inset 4px 4px #6f7880, inset -4px -4px #232a32;
+  position: relative;
+}
+
+.new-game-btn::before {
+  content: "";
+  display: block;
+  width: 4px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  bottom: -4px;
+  left: 0px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.new-game-btn::after {
+  content: "";
+  display: block;
+  width: 4px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
   top: -4px;
   right: 0px;
   position: absolute;
   transform-origin: bottom right;
   transform: rotate(-90deg);
+}
+
+.new-game-btn:active {
+  box-shadow: inset 4px 4px #232a32, inset -2px -2px #232a32;
+}
+
+.new-game-btn:active span {
+  transform: translateX(2px) translateY(2px);
 }
