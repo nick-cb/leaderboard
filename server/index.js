@@ -17,7 +17,7 @@ server.on("request", async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     return res.end(JSON.stringify(input));
   };
-  let cookie = req.headers.cookie || '';
+  let cookie = req.headers.cookie || "";
   cookie = cookie.split("; ").map((c) => c.split("="));
   const userIdCookie = cookie.find(([key]) => key === "userId");
   const userId = userIdCookie ? userIdCookie[1] : null;
@@ -44,7 +44,7 @@ server.on("request", async (req, res) => {
     const [gameId, minesweeper] = await gameController.newGame({ mode });
     res.json({
       id: gameId,
-      game: minesweeper.getMaskedBoardAsNumberArray(),
+      game: minesweeper.getMaskedBoardAs2DArray(),
     });
     return;
   }
@@ -75,7 +75,7 @@ server.on("request", async (req, res) => {
 
     res.json({
       id: id,
-      board: game.getMaskedBoardAsNumberArray(),
+      board: game.getMaskedBoardAs2DArray(),
     });
     return;
   }
@@ -103,7 +103,7 @@ server.on("request", async (req, res) => {
 
     res.json({
       id: id,
-      board: game.getMaskedBoardAsNumberArray(),
+      board: game.getMaskedBoardAs2DArray(),
     });
     return;
   }
@@ -149,7 +149,7 @@ server.on("request", async (req, res) => {
     }
     id = parseInt(id);
     const game = await gameController.getGameFromPoolOrFromDatabase(id);
-    res.json({ gameId: id, board: game.getMaskedBoardAsNumberArray() });
+    res.json({ gameId: id, board: game.getMaskedBoardAs2DArray() });
     return;
   }
 

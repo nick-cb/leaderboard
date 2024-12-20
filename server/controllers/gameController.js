@@ -1,4 +1,4 @@
-const { MineSweeper } = require("../../minesweeper/index-old.js");
+const { MineSweeper } = require("../../minesweeper/index.js");
 const db = require("../db/db.js");
 const { sql, eq, and, or } = require("../../query-builder/index.js");
 
@@ -22,7 +22,7 @@ async function newGame({ mode }) {
     bv3: minesweeper.calculate3bv(),
     bv3_per_second: 0,
     result: null,
-    board: minesweeper.getBoardAsConstantArray(),
+    board: minesweeper.getBoardAs2DArray(),
     game_mode: 2,
     row_count: minesweeper.rows,
     col_count: minesweeper.cols,
@@ -33,7 +33,7 @@ async function newGame({ mode }) {
   if (queryResult[0] && "insertId" in queryResult[0]) {
     const gameId = queryResult[0].insertId;
     await db.insert("cells").values(
-      minesweeper.getBoardAsConstantArray().flatMap((row, y) => {
+      minesweeper.getBoardAs2DArray().flatMap((row, y) => {
         return row.map((col, x) => {
           return {
             game_id: gameId,

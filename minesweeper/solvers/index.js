@@ -111,8 +111,7 @@ class LvngdStrategy extends MinesweeperSolverStrategy {
     }
     this.board = rows;
     this.mineSweeper = MineSweeper.from(rows);
-    this.mineSweeper.isWon = true;
-    this.mineSweeper.finishGame();
+    this.mineSweeper.finishGame(1);
     this.mineSweeper.printBoard();
   }
 

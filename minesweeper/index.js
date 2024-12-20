@@ -189,8 +189,8 @@ class MineSweeper {
 
     this.leftClicks += 1;
     this.#revealTile({ x, y }, callback);
-    if (this.getResult()) {
-      this.finishGame(this.getResult());
+    if (this.shouldEndGame()) {
+      this.finishGame(this.shouldEndGame());
     }
     return revealedTiles;
   }
@@ -221,7 +221,7 @@ class MineSweeper {
     return tile;
   }
 
-  getResult() {
+  shouldEndGame() {
     const lastTile = this.trail.at(-1);
     if (lastTile.constant === 9 && lastTile.isRevealed) {
       return 0;
@@ -280,6 +280,43 @@ class MineSweeper {
     return this.board.map((row) => {
       return row.map((col) => col.constant);
     });
+  }
+
+  getMaskedBoardAs2DArray() {
+    return this.board.map((row) => {
+      return row.map((col) => {
+        return col.isFlagged ? "+" : col.isRevealed ? col.constant : "-";
+      });
+    });
+  }
+
+  printBoard() {
+    let str = "";
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        const tile = this.board[i][j];
+        if (tile.isMine) {
+          str += "💥";
+        } else {
+          const colors = {
+            0: 37,
+            1: 34,
+            2: 32,
+            3: 31,
+            4: 36,
+            5: 33,
+            6: 35,
+            7: 91,
+            8: 95,
+          };
+          str += `\x1b[${colors[tile.adjMine]}m${tile.adjMine}\x1b[0m `;
+        }
+      }
+
+      str += "\n";
+    }
+
+    console.log(str);
   }
 }
 

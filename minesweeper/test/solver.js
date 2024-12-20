@@ -13,7 +13,7 @@ describe("Lvngd strategy test", () => {
       return;
     }
     assert.equal(strategy.mineSweeper instanceof MineSweeper, true);
-    assert.equal(strategy.mineSweeper.isFinished(), true);
+    assert.equal(isNaN(strategy.mineSweeper.result), false);
     assert.equal(typeof stats.startTime === "number", true);
     assert.equal(typeof stats.endTime === "number", true);
     assert.equal(typeof stats.clicks === "number", true);
