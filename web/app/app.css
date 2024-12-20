@@ -167,3 +167,37 @@ html {
 .new-game-btn:active span {
   transform: translateX(2px) translateY(2px);
 }
+
+.option-pane {
+  box-shadow: inset 4px 4px #232a32, inset -4px -4px #6f7880;
+  border: 8px solid #474e56;
+  position: relative;
+}
+
+.option-pane::before {
+  content: "";
+  display: block;
+  width: 4px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #6f7880;
+  bottom: -4px;
+  left: 0px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.option-pane::after {
+  content: "";
+  display: block;
+  width: 4px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #6f7880;
+  top: -4px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
+}

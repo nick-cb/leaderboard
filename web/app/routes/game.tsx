@@ -33,6 +33,7 @@ export default function Game({ params }: any) {
     },
   });
   const board: any[] = data?.board;
+  const result = data?.result;
 
   if (!data) {
     return <div>There is no game here</div>;
@@ -45,14 +46,14 @@ export default function Game({ params }: any) {
         event.preventDefault();
       }}
     >
-      <div className="flex justify-center py-2">
+      <div className="option-pane flex justify-center py-2">
         <button
           onClick={() => {
             newGameMutation.mutate();
           }}
-          className="new-game-btn text-2xl border border-black px-2 py-1 cursor-default"
+          className="new-game-btn text-2xl border border-[#1E262E] px-2 py-1 cursor-default"
         >
-          <span className="block">😊</span>
+          <span className="block">{result === 0 ? "😵" : result === 1 ? "🥳" : "😊"}</span>
         </button>
       </div>
       <div className={"flex board w-max relative flex-col"}>
@@ -148,7 +149,7 @@ function Cell(props: CellProps) {
       data-coordinate={`${coordinate[0]},${coordinate[1]}`}
       onContextMenu={handleContextMenu}
       onMouseEnter={(event) => {
-        if (isRevealed) {
+        if (isRevealed || value === '+') {
           return;
         }
         if (event.buttons === 1) {

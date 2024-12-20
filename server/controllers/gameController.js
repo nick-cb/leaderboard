@@ -126,11 +126,6 @@ async function revealTile(gameId, userId, { x, y }) {
           : sql`end_time`,
       })
       .where(eq("ID", gameId));
-    console.log({
-      revealedTiles: minesweeper.revealedTileCount,
-      result: minesweeper.result,
-      isFinished: minesweeper.isFinished(),
-    });
     if (minesweeper.isFinished() && minesweeper.result === 1) {
       const score = await calculateScore(userId, minesweeper);
       await db.update("users").set({ trophies: score }).where(eq("ID", userId));
@@ -210,12 +205,7 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     })),
   });
   game.startTime = startTime;
-  if (result === 1) {
-    game.isWon = true;
-  }
-  if (result === 0) {
-    game.isLost = true;
-  }
+  game.result=result;
 
   gamePool.push([gameId, game]);
   return game;

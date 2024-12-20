@@ -209,7 +209,6 @@ class MineSweeper {
     const revealedTiles = [tile];
     callback?.(tile);
 
-    console.log("a",revealedTiles)
     if (tile.constant === 9) return revealedTiles;
     if (tile.constant === 0) {
       for (const neighbor of tile.neighbors) {
@@ -233,23 +232,12 @@ class MineSweeper {
   }
 
   shouldEndGame(revealedTiles) {
-    console.log("b",revealedTiles)
     const lastTile = revealedTiles.at(-1);
-    console.log({
-      lastTile,
-      wtf: lastTile.constant === 9 && lastTile.isRevealed,
-    });
     if (lastTile.constant === 9 && lastTile.isRevealed) {
-      console.log("return 0");
       return 0;
     }
 
     const win = this.revealedTileCount === this.rows * this.cols - this.mines;
-    console.log({
-      win,
-      len: this.revealedTileCount,
-      total: this.rows * this.cols - this.mines,
-    });
     if (win) {
       return 1;
     }

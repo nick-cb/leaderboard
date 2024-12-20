@@ -150,7 +150,11 @@ server.on("request", async (req, res) => {
     }
     id = parseInt(id);
     const game = await gameController.getGameFromPoolOrFromDatabase(id);
-    res.json({ gameId: id, board: game.getMaskedBoardAs2DArray() });
+    res.json({
+      gameId: id,
+      result: game.result,
+      board: game.getMaskedBoardAs2DArray(),
+    });
     return;
   }
 
