@@ -239,6 +239,10 @@ class MineSweeper {
         continue;
       }
       revealedTiles.push(...this.#revealTile({ x, y }));
+      if (this.shouldEndGame(revealedTiles) !== undefined) {
+        this.finishGame(this.shouldEndGame(revealedTiles));
+        break;
+      }
     }
     this.revealedTileCount += revealedTiles.length;
     this.trail.push(...revealedTiles);
@@ -252,7 +256,6 @@ class MineSweeper {
   toggleFlagTile({ x, y }) {
     this.rightClicks += 1;
     const tile = this.board[y][x];
-    console.log({ tile });
     if (!tile.isFlagable()) return;
 
     tile.isFlagged = !tile.isFlagged;
@@ -262,6 +265,9 @@ class MineSweeper {
 
   shouldEndGame(revealedTiles) {
     const lastTile = revealedTiles.at(-1);
+    if (!lastTile) {
+      return undefined;
+    }
     if (lastTile.constant === 9 && lastTile.isRevealed) {
       return 0;
     }
