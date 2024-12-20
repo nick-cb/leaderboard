@@ -56,7 +56,7 @@ class MineSweeper {
   result;
   leftClicks;
   rightClicks;
-  revealedTileCount;
+  revealedTileCount = 0;
   startTime = 0;
   endTime = 0;
   /** @type {Array<Tile>} board */
@@ -103,6 +103,9 @@ class MineSweeper {
           }
         }
       }
+      mineSweeper.revealedTileCount = mineSweeper.board.flatMap((row) =>
+        row.filter((col) => col.isRevealed),
+      ).length;
 
       return mineSweeper;
     }
@@ -188,30 +191,38 @@ class MineSweeper {
     if (this.startTime === 0) this.startTime = Date.now();
 
     this.leftClicks += 1;
-    this.#revealTile({ x, y }, callback);
-    if (this.shouldEndGame()) {
-      this.finishGame(this.shouldEndGame());
+    const revealedTiles = this.#revealTile({ x, y }, callback);
+    this.revealedTileCount += revealedTiles.length;
+    this.trail.push(...revealedTiles);
+    if (this.shouldEndGame(revealedTiles) !== undefined) {
+      this.finishGame(this.shouldEndGame(revealedTiles));
     }
+
     return revealedTiles;
   }
 
   #revealTile({ x, y }, callback) {
     const tile = this.board[y][x];
-    if (!tile.isRevealable()) return;
+    if (!tile.isRevealable()) return [];
 
     tile.isRevealed = true;
-    this.trail.push(tile);
+    const revealedTiles = [tile];
     callback?.(tile);
 
-    if (tile.constant === 9) return;
+    console.log("a",revealedTiles)
+    if (tile.constant === 9) return revealedTiles;
     if (tile.constant === 0) {
       for (const neighbor of tile.neighbors) {
-        this.#revealTile({ x: neighbor.x, y: neighbor.y }, callback);
+        revealedTiles.push(
+          ...this.#revealTile({ x: neighbor.x, y: neighbor.y }, callback),
+        );
       }
     }
+
+    return revealedTiles;
   }
 
-  toggleFlagTile() {
+  toggleFlagTile({ x, y }) {
     this.rightClicks += 1;
     const tile = this.board[y][x];
     if (!tile.isFlagable()) return;
@@ -221,13 +232,24 @@ class MineSweeper {
     return tile;
   }
 
-  shouldEndGame() {
-    const lastTile = this.trail.at(-1);
+  shouldEndGame(revealedTiles) {
+    console.log("b",revealedTiles)
+    const lastTile = revealedTiles.at(-1);
+    console.log({
+      lastTile,
+      wtf: lastTile.constant === 9 && lastTile.isRevealed,
+    });
     if (lastTile.constant === 9 && lastTile.isRevealed) {
+      console.log("return 0");
       return 0;
     }
 
-    const win = this.trail.length === this.rows * this.cols - this.mines;
+    const win = this.revealedTileCount === this.rows * this.cols - this.mines;
+    console.log({
+      win,
+      len: this.revealedTileCount,
+      total: this.rows * this.cols - this.mines,
+    });
     if (win) {
       return 1;
     }
@@ -238,6 +260,15 @@ class MineSweeper {
   finishGame(result) {
     if (this.endTime === 0) this.endTime = Date.now();
     this.result = result;
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        this.board[y][x].isRevealed = true;
+      }
+    }
+  }
+
+  isFinished() {
+    return this.result !== undefined;
   }
 
   calculate3bv() {

@@ -75,6 +75,7 @@ server.on("request", async (req, res) => {
 
     res.json({
       id: id,
+      result: game.result,
       board: game.getMaskedBoardAs2DArray(),
     });
     return;

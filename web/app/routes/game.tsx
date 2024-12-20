@@ -39,7 +39,12 @@ export default function Game({ params }: any) {
   }
 
   return (
-    <div className="panel bg-[#474E56] w-max">
+    <div
+      className="panel bg-[#474E56] w-max"
+      onContextMenu={(event) => {
+        event.preventDefault();
+      }}
+    >
       <div className="flex justify-center py-2">
         <button
           onClick={() => {

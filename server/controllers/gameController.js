@@ -1,6 +1,7 @@
 const { MineSweeper } = require("../../minesweeper/index.js");
 const db = require("../db/db.js");
 const { sql, eq, and, or } = require("../../query-builder/index.js");
+const scores = require("../scores.json");
 
 /** @type {Array<[gameId, MineSweeper]>} gamePools */
 const gamePool = [];
@@ -111,39 +112,27 @@ async function revealTile(gameId, userId, { x, y }) {
       .where(
         and(
           eq("game_id", gameId),
-          or(
-            ...tiles.map((tile) =>
-              and(eq("x", tile.coordinate.x), eq("y", tile.coordinate.y)),
-            ),
-          ),
+          or(...tiles.map((tile) => and(eq("x", tile.x), eq("y", tile.y)))),
         ),
       );
-    // console.log({isWon: minesweeper.isWon, isLost: minesweeper.isLost})
     await db
       .update("games")
       .set({
         click_count: sql`click_count+1`,
         left_click_count: sql`left_click_count+1`,
-        result: minesweeper.isLost || minesweeper.isWon || null,
+        result: minesweeper.result ?? null,
         end_time: minesweeper.isFinished()
           ? new Date(minesweeper.endTime)
           : sql`end_time`,
       })
       .where(eq("ID", gameId));
-    // let totalRevealed = 0;
-    // for (const row of minesweeper.getMaskedBoardAsNumberArray()) {
-    //   for (const cell of row) {
-    //     if (isNaN(cell)) {
-    //       continue;
-    //     }
-    //     totalRevealed += 1;
-    //   }
-    // }
-    // console.log({ totalRevealed });
-    // minesweeper.printMaskedBoard();
-    if (minesweeper.isFinished() && minesweeper.isWon) {
-      console.log("finished", minesweeper);
-      const score = await calculateScore(userId);
+    console.log({
+      revealedTiles: minesweeper.revealedTileCount,
+      result: minesweeper.result,
+      isFinished: minesweeper.isFinished(),
+    });
+    if (minesweeper.isFinished() && minesweeper.result === 1) {
+      const score = await calculateScore(userId, minesweeper);
       await db.update("users").set({ trophies: score }).where(eq("ID", userId));
     }
   }
@@ -156,14 +145,12 @@ async function toggleFlagMine(gameId, { x, y }) {
   if (minesweeper.isFinished()) {
     return minesweeper;
   }
-  const tile = minesweeper.toggleFlagMine({ x, y });
+  const tile = minesweeper.toggleFlagTile({ x, y });
   if (tile) {
     await db
       .update("cells")
       .set({ is_flagged: true })
-      .where(
-        sql`game_id=${gameId} and (x=${tile.coordinate.x} and y=${tile.coordinate.y})`,
-      );
+      .where(sql`game_id=${gameId} and (x=${tile.x} and y=${tile.y})`);
   }
   await db
     .update("games")
@@ -208,22 +195,18 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     .from("cells")
     .where(eq("game_id", gameId))
     .orderBy({ x: 1, y: 1 });
-  console.log({
-    revealedCells: cellRows.filter((cell) => !!parseInt(cell.is_revealed))
-      .length,
-  });
 
   const startTime = game.startTime;
   const result = game.result;
   game = MineSweeper.from({
     rows: game.row_count,
     cols: game.col_count,
-    cells: cellRows.map((cell) => ({
-      coordinate: { x: cell.x, y: cell.y },
-      adjMine: cell.constant,
-      isMine: cell.constant === 9,
+    tiles: cellRows.map((cell) => ({
+      x: cell.x,
+      y: cell.y,
+      constant: cell.constant,
       isFlagged: !!parseInt(cell.is_flagged.toString()),
-      isReveal: !!parseInt(cell.is_revealed.toString()),
+      isRevealed: !!parseInt(cell.is_revealed.toString()),
     })),
   });
   game.startTime = startTime;
@@ -233,7 +216,6 @@ async function getGameFromPoolOrFromDatabase(gameId) {
   if (result === 0) {
     game.isLost = true;
   }
-  console.log({ game });
 
   gamePool.push([gameId, game]);
   return game;
@@ -264,7 +246,7 @@ async function calculateScore(userId, minesweeper) {
       "total_wins_mode2",
     ])
     .from("users")
-    .where(eq("user_id", userId));
+    .where(eq("ID", userId));
   const user = userRow[0];
   const time = minesweeper.endTime - minesweeper.startTime;
   const bestTime = !user.best_time_mode2
@@ -314,8 +296,7 @@ function calculateBestTimeScore({ bestTime }) {
   return 0;
 }
 
-function calculateMasteryScore({ gameHistory }) {
-  const winCount = gameHistory.filter((game) => (game.won = true)).length;
+function calculateMasteryScore({ winCount }) {
   return scores[0].winsScore[winCount];
 }
 
