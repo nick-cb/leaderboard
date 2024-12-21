@@ -1,11 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { queryClient } from "~/root";
 
 export default function Game({ params }: any) {
   let navigate = useNavigate();
   const gameId = params.gameId;
+  const [runClock, setRunClock] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["download-game", gameId],
@@ -35,6 +36,9 @@ export default function Game({ params }: any) {
   });
   const board: any[] = data?.board;
   const result = data?.result;
+  if (typeof result === "number" && runClock) {
+    setRunClock(false);
+  }
   function getRevealableNeighbors({ x, y }: { x: number; y: number }) {
     const neighbors = [
       { y: y - 1, x: x - 1 },
@@ -79,7 +83,7 @@ export default function Game({ params }: any) {
         event.preventDefault();
       }}
     >
-      <div className="option-pane flex justify-center py-2">
+      <div className="option-pane flex justify-between p-2">
         <button
           onClick={() => {
             newGameMutation.mutate();
@@ -90,6 +94,7 @@ export default function Game({ params }: any) {
             {result === 0 ? "😵" : result === 1 ? "🥳" : "😊"}
           </span>
         </button>
+        <Clock key={gameId} run={runClock} />
       </div>
       <div className={"flex board w-max relative flex-col"}>
         {board.map((row: Array<number | string>, y) => {
@@ -106,6 +111,11 @@ export default function Game({ params }: any) {
                     gameId={gameId}
                     revealableNeigbors={revealableNeigbors}
                     flaggedNeighbors={flaggedNeighbors}
+                    onReveal={() => {
+                      if (!runClock) {
+                        setRunClock(true);
+                      }
+                    }}
                   />
                 );
               })}
@@ -123,10 +133,17 @@ type CellProps = {
   gameId: number;
   revealableNeigbors: { x: number; y: number }[];
   flaggedNeighbors: { x: number; y: number }[];
+  onReveal: () => void;
 };
 function Cell(props: CellProps) {
-  const { value, coordinate, gameId, revealableNeigbors, flaggedNeighbors } =
-    props;
+  const {
+    value,
+    coordinate,
+    gameId,
+    revealableNeigbors,
+    flaggedNeighbors,
+    onReveal,
+  } = props;
   const isRevealed = typeof value !== "string";
   const revealTileMutation = useMutation({
     mutationKey: ["reveal-tile"],
@@ -241,6 +258,9 @@ function Cell(props: CellProps) {
           gameId: gameId,
           coordinate: coordinate,
         });
+        for (const { x, y } of revealableNeigbors) {
+          onReveal();
+        }
       } else {
         coordinate = coordinate?.split(",");
         coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
@@ -259,6 +279,7 @@ function Cell(props: CellProps) {
         gameId: gameId,
         coordinate: coordinate,
       });
+      onReveal();
     }
   }
 
@@ -334,4 +355,34 @@ function animationInterval(
   }
 
   scheduleFrame(start);
+}
+
+function Clock({ run }: { run: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!run) {
+      return;
+    }
+    const controller = new AbortController();
+    let time = 0;
+    animationInterval(1000, controller.signal, () => {
+      const target = ref.current;
+      time += 1;
+      if (target) {
+        target.innerHTML = time.toString().padStart(3, "0");
+      }
+    });
+    return () => {
+      controller.abort();
+    };
+  }, [run]);
+
+  return (
+    <div className={"clock-panel p-1 text-3xl font-bold bg-black"}>
+      <span className={"block absolute inset-1 text-[#400000]"}>000</span>
+      <div ref={ref} className={"clock text-[#CC0100] relative"}>
+        000
+      </div>
+    </div>
+  );
 }
