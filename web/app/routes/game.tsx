@@ -20,7 +20,6 @@ export default function Game({ params }: any) {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-  console.log({ data }, ["download-game", gameId]);
   const newGameMutation = useMutation({
     mutationKey: ["new-game"],
     mutationFn: async () => {
@@ -158,7 +157,6 @@ function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      console.log("update store", data, ["download-game", gameId]);
       queryClient.setQueryData(["download-game", gameId], data);
     },
   });
