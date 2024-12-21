@@ -90,7 +90,7 @@ server.on("request", async (req, res) => {
     coordinate = coordinate.split(",");
     if (isNaN(coordinate[0]) || isNaN(coordinate[1])) {
       res.json({
-        error: "Invalid coordinate, the format must be <number>,<number>",
+        error: "Invalid coordinate, the format must be <x:number>,<y:number>",
       });
       return;
     }

@@ -190,80 +190,84 @@ function Cell(props: CellProps) {
     });
   }
 
+  function handleMouseEnter(event: React.MouseEvent<HTMLDivElement>) {
+    if (isRevealed || value === "+") {
+      return;
+    }
+    if (event.buttons === 1) {
+      event.currentTarget.classList.add("revealed");
+    }
+  }
+
+  function handleMouseLeave(event: React.MouseEvent<HTMLDivElement>) {
+    if (isRevealed) {
+      return;
+    }
+    event.currentTarget.classList.remove("revealed");
+  }
+
+  function handleMouseDown(event: React.MouseEvent<HTMLDivElement>) {
+    if (value === "+") {
+      return;
+    }
+    if (isRevealed && event.button === 0) {
+      let coordinate: any = event.currentTarget.dataset["coordinate"];
+      coordinate = coordinate?.split(",");
+      coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
+      for (const { x, y } of revealableNeigbors) {
+        const node = document.querySelector(`[data-coordinate="${x},${y}"]`);
+        if (node instanceof HTMLDivElement) {
+          node.classList.add("revealed");
+        }
+      }
+      return;
+    }
+    if (event.buttons === 1) {
+      event?.currentTarget.classList.add("revealed");
+    }
+  }
+
+  function handleMouseUp(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.button === 2 || value === "+") {
+      return;
+    }
+    let coordinate: any = event.currentTarget.dataset["coordinate"];
+
+    if (isRevealed && revealableNeigbors.length) {
+      if (flaggedNeighbors.length === value) {
+        revealAdjTilesMutation.mutate({
+          gameId: gameId,
+          coordinate: coordinate,
+        });
+      } else {
+        coordinate = coordinate?.split(",");
+        coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
+        for (const { x, y } of revealableNeigbors) {
+          const node = document.querySelector(`[data-coordinate="${x},${y}"]`);
+          if (node instanceof HTMLDivElement) {
+            node.classList.remove("revealed");
+          }
+        }
+      }
+      return;
+    }
+
+    if (!isRevealed) {
+      revealTileMutation.mutate({
+        gameId: gameId,
+        coordinate: coordinate,
+      });
+    }
+  }
+
   return (
     <div
       data-coordinate={`${coordinate[0]},${coordinate[1]}`}
       onContextMenu={handleContextMenu}
-      onMouseEnter={(event) => {
-        if (isRevealed || value === "+") {
-          return;
-        }
-        if (event.buttons === 1) {
-          event.currentTarget.classList.add("revealed");
-        }
-      }}
-      onMouseLeave={(event) => {
-        if (isRevealed) {
-          return;
-        }
-        event.currentTarget.classList.remove("revealed");
-      }}
-      onMouseDown={(event) => {
-        if (value === "+") {
-          return;
-        }
-        if (isRevealed) {
-          let coordinate: any = event.currentTarget.dataset["coordinate"];
-          coordinate = coordinate?.split(",");
-          coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
-          for (const { x, y } of revealableNeigbors) {
-            const node = document.querySelector(
-              `[data-coordinate="${x},${y}"]`
-            );
-            if (node instanceof HTMLDivElement) {
-              node.classList.add("revealed");
-            }
-          }
-          return;
-        }
-        if (event.buttons === 1) {
-          event?.currentTarget.classList.add("revealed");
-        }
-      }}
-      onMouseUp={(event) => {
-        if (event.button === 2 || value === "+") {
-          return;
-        }
-        let coordinate: any = event.currentTarget.dataset["coordinate"];
-
-        if (isRevealed && revealableNeigbors.length) {
-          if (flaggedNeighbors.length === value) {
-            revealAdjTilesMutation.mutate({
-              gameId: gameId,
-              coordinate: coordinate,
-            });
-          } else {
-            coordinate = coordinate?.split(",");
-            coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
-            for (const { x, y } of revealableNeigbors) {
-              const node = document.querySelector(
-                `[data-coordinate="${x},${y}"]`
-              );
-              if (node instanceof HTMLDivElement) {
-                node.classList.remove("revealed");
-              }
-            }
-          }
-          return;
-        }
-
-        if (!isRevealed) {
-          revealTileMutation.mutate({
-            gameId: gameId,
-            coordinate: coordinate,
-          });
-        }
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       className={
         "cell w-8 h-8 text-center cursor-default bg-[#4D545C] select-none font-extrabold" +
         (value !== "+" && value !== "-" ? " revealed " : "")
@@ -300,4 +304,32 @@ function Cell(props: CellProps) {
         : value}
     </div>
   );
+}
+
+function animationInterval(
+  ms: number,
+  signal: AbortSignal,
+  callback: Function
+) {
+  // Prefer currentTime, as it'll better sync animtions queued in the
+  // same frame, but if it isn't supported, performance.now() is fine.
+  const start = document.timeline
+    ? document.timeline.currentTime as number
+    : performance.now();
+
+  function frame(time: number) {
+    if (signal.aborted) return;
+    callback(time);
+    scheduleFrame(time);
+  }
+
+  function scheduleFrame(time: number) {
+    const elapsed = time - start;
+    const roundedElapsed = Math.round(elapsed / ms) * ms;
+    const targetNext = start + roundedElapsed + ms;
+    const delay = targetNext - performance.now();
+    setTimeout(() => requestAnimationFrame(frame), delay);
+  }
+
+  scheduleFrame(start);
 }
