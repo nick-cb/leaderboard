@@ -19,6 +19,7 @@ export default function Game({ params }: any) {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+  console.log({ data }, ["download-game", gameId]);
   const newGameMutation = useMutation({
     mutationKey: ["new-game"],
     mutationFn: async () => {
@@ -140,6 +141,7 @@ function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
+      console.log("update store", data, ["download-game", gameId]);
       queryClient.setQueryData(["download-game", gameId], data);
     },
   });
@@ -314,7 +316,7 @@ function animationInterval(
   // Prefer currentTime, as it'll better sync animtions queued in the
   // same frame, but if it isn't supported, performance.now() is fine.
   const start = document.timeline
-    ? document.timeline.currentTime as number
+    ? (document.timeline.currentTime as number)
     : performance.now();
 
   function frame(time: number) {
