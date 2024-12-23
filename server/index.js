@@ -2,6 +2,7 @@ const http = require("node:http");
 const gameController = require("./controllers/gameController.js");
 const userController = require("./controllers/userController.js");
 const util = require("util");
+const { Writable } = require("node:stream");
 
 // const server = http.createServer();
 
@@ -229,6 +230,22 @@ const util = require("util");
 //   res.end("Not found");
 // });
 
+/* Stream Api
+* - Two modes: 'flowing' and 'pause'
+* - Start default in 'pause' mode
+* - To change to 'flowing' mode:
+    - Add 'data' event handler
+    - Calling stream.resume() method
+    - Calling stream.pipe() method
+* - To switch back to pause mode
+    - If there are no pipe, calling stream.pause() method
+    - If there are pipes, calling stream.unpipe() method
+* - Remove 'data' event handler will NOT automatically pause the stream
+* - If there are pipes, calling stream.pause() will not guarantee the stream is
+   pause if those pipe is drain and ask for more data
+* - Adding a 'readable' event handler automatically make the stream stop flowing
+  - Resume flow again when remove 'readable' event
+*/
 /**
  * @typedef {ServerResponse<http.IncomingMessage> & {req: IncomingMessage} & {json: <T>(params: T) => any}} Response
 
@@ -236,9 +253,9 @@ const util = require("util");
  */
 class Server {
   /** @type {Array<{method: string, endpoint: string | RegExp, callbacks: (req: Request, res: Response) => any}>} */
-  #routes = [];
+  routes = [];
   /** @type {Array<{endpoint:string|RegExp,callback:Function}>} */
-  #middlewares = [];
+  middlewares = [];
   #server;
   constructor() {
     this.#server = http.createServer();
@@ -250,79 +267,37 @@ class Server {
     this.#server.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}`);
     });
+    this.handleNewRequest();
+  }
 
+  handleNewRequest() {
     this.#server.on("request", async (req, res) => {
       res.json = (input) => {
         res.setHeader("Content-Type", "application/json");
         return res.end(JSON.stringify(input));
       };
-      if (req.method.toLowerCase() === "post") {
-        let body;
-        req.on("data", (chunk) => {
-          if (!body) {
-            body = chunk;
-            return;
-          }
-          body += chunk;
-        });
 
-        req.on("end", async () => {
-          if (!Buffer.isBuffer(body)) {
-            res.end("Invalid data type");
-            return;
-          }
+      for (const route of this.routes) {
+        const isRequestMatch =
+          this.isMatchMethod(req, route.method) &&
+          this.isMatchEndpoint(req, route.endpoint);
+        if (!isRequestMatch) {
+          continue;
+        }
 
-          if (req.headers["content-type"] === "application/json") {
-            req.body = JSON.parse(body.toString());
-          }
-
-          if (
-            req.headers["content-type"] === "application/x-www-form-urlencoded"
-          ) {
-            const data = new URLSearchParams(body.toString());
-            const formData = new FormData();
-            for (const [key, value] of data) {
-              formData.set(key, value);
-            }
-            req.body = formData;
-          }
-
-          for (const route of this.#routes) {
-            if (!this.isMatchMethod(req, route.method)) {
-              continue;
-            }
-            if (!this.isMatchEndpoint(req, route.endpoint)) {
-              continue;
-            }
-            for (const middleware of this.#middlewares) {
-              if (!this.isMatchEndpoint(req, middleware.endpoint)) {
-                continue;
-              }
-              middleware.callback(req, res);
-            }
-            for (const callback of route.callbacks) {
-              const result = callback(req, res);
-              await result;
-            }
-            return;
-          }
-        });
-      } else {
-        for (const route of this.#routes) {
-          if (!this.isMatchMethod(req, route.method)) {
+        for (const middleware of this.middlewares) {
+          if (!this.isMatchEndpoint(req, middleware.endpoint)) {
             continue;
           }
-          if (!this.isMatchEndpoint(req, route.endpoint)) {
-            continue;
+          const result = middleware.callback(req, res);
+          if (util.types.isPromise(result)) {
+            await result;
           }
-          for (const middleware of this.#middlewares) {
-            if (!this.isMatchEndpoint(req, middleware.endpoint)) {
-              continue;
-            }
-            middleware.callback(req, res);
-          }
-          for (const callback of route.callbacks) {
-            const result = callback(req, res);
+        }
+
+        for (const callback of route.callbacks) {
+          const result = callback(req, res);
+          if (util.types.isPromise(result)) {
             await result;
           }
           return;
@@ -336,7 +311,7 @@ class Server {
    * @param {(request: IncomingMessage, response: ServerResponse<http.IncomingMessage> & {req: IncomingMessage;}) => any} callback
    */
   get(endpoint, ...callbacks) {
-    this.#routes.push({ method: "get", endpoint, callbacks });
+    this.routes.push({ method: "get", endpoint, callbacks });
   }
 
   /**
@@ -344,11 +319,11 @@ class Server {
    * @param {(request: IncomingMessage, response: ServerResponse<http.IncomingMessage> & {req: IncomingMessage;}) => any} callbacks
    */
   post(endpoint, ...callbacks) {
-    this.#routes.push({ method: "post", endpoint, callbacks });
+    this.routes.push({ method: "post", endpoint, callbacks });
   }
 
   use(endpoint, callback) {
-    this.#middlewares.push({ endpoint, callback });
+    this.middlewares.push({ endpoint, callback });
   }
 
   isMatchMethod(req, method) {
@@ -360,8 +335,8 @@ class Server {
       return false;
     }
     const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
-    return typeof endpoint === "string"
-      ? endpoint === url.pathname
+    return typeof endpoint === "string" ?
+        endpoint === url.pathname
       : endpoint.test(url.pathname);
   }
 }
@@ -376,6 +351,33 @@ function cors() {
     res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
     res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");
     res.setHeader("Access-Control-Max-Age", 2592000);
+  };
+}
+
+function body() {
+  /** @param {http.IncomingMessage} req */
+  return async (req, res) => {
+    /** @type {Buffer|undefined} data */
+    let data;
+    for await (const chunk of req) {
+      if (!data) {
+        data = chunk;
+        continue;
+      }
+      data += data.chunk;
+    }
+    const contentType = req.headers["content-type"];
+    if (contentType === "application/json") {
+      req.body = JSON.parse(body.toString());
+    }
+    if (contentType === "application/x-www-form-urlencoded") {
+      const data = new URLSearchParams(body.toString());
+      const formData = new FormData();
+      for (const [key, value] of data) {
+        formData.set(key, value);
+      }
+      req.body = formData;
+    }
   };
 }
 
@@ -395,6 +397,7 @@ function cors() {
 
 const server = new Server();
 
+server.use(/.*/, body());
 server.use(/.*/, cors());
 
 server.get("/game/new", async (req, res) => {
@@ -534,7 +537,6 @@ server.post("/bot/game/save", async (req, res) => {
 server.post("/login", async (req, res) => {
   try {
     const body = req.body;
-    console.log(body);
     if (!(body instanceof FormData)) {
       throw new Error("Invalid data type");
     }
