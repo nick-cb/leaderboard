@@ -366,6 +366,9 @@ function Clock({ run }: { run: boolean }) {
     animationInterval(1000, controller.signal, () => {
       const target = ref.current;
       time += 1;
+      if (time >= 999) {
+        controller.abort();
+      }
       if (target) {
         target.innerHTML = time.toString().padStart(3, "0");
       }
@@ -376,7 +379,7 @@ function Clock({ run }: { run: boolean }) {
   }, [run]);
 
   return (
-    <div className={"clock-panel p-1 text-3xl font-bold bg-black"}>
+    <div className={"clock-panel p-1 text-3xl font-bold bg-black select-none"}>
       <span className={"block absolute inset-1 text-[#400000]"}>000</span>
       <div ref={ref} className={"clock text-[#CC0100] relative"}>
         000
