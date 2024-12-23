@@ -25,12 +25,17 @@ function body() {
       }
       data += data.chunk;
     }
+    if (!data) {
+      return;
+    }
+
+    data = data.toString();
     const contentType = req.headers["content-type"];
     if (contentType === "application/json") {
-      req.body = JSON.parse(body.toString());
+      req.body = JSON.parse(data);
     }
     if (contentType === "application/x-www-form-urlencoded") {
-      const data = new URLSearchParams(body.toString());
+      data = new URLSearchParams(data);
       const formData = new FormData();
       for (const [key, value] of data) {
         formData.set(key, value);
