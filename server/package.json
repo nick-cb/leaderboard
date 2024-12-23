@@ -1,10 +1,11 @@
 {
   "scripts": {
-    "dev": "nodemon",
-    "dev:watch": "../watcher/bin/watch.js index.js"
+    "dev": "../watcher/bin/watch.js index.js"
   },
-	"dependencies": {
-		"mysql2": "^3.11.5",
-		"nodemon": "^3.1.7"
-	}
+  "dependencies": {
+    "mysql2": "^3.11.5",
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  }
 }
