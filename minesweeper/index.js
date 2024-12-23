@@ -187,7 +187,7 @@ class MineSweeper {
    */
   revealTile({ x, y }, callback) {
     const tile = this.board[y][x];
-    if (!tile.isRevealable()) return;
+    if (!tile.isRevealable()) return [];
     if (this.startTime === 0) this.startTime = Date.now();
 
     this.leftClicks += 1;
