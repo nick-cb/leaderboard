@@ -28,12 +28,19 @@ const util = require("util");
 */
 
 /**
- * @typedef {ServerResponse<http.IncomingMessage> & {req: IncomingMessage} & {json: <T>(params: T) => any}} Response
+ * @typedef {http.ServerResponse<http.IncomingMessage> & {req: IncomingMessage} & {json: <T>(params: T) => any}} ServerResponse
 
- * @typedef {http.IncomingMessage & {body: any}} Request
+ * @typedef {http.IncomingMessage & {body: any}} ServerRequest
  */
+
+/**
+ * @callback RouteHandlerCallbacks
+ * @param {ServerRequest} request
+ * @param {ServerResponse} response
+ */
+
 class Server {
-  /** @type {Array<{method: string, endpoint: string | RegExp, callbacks: (req: Request, res: Response) => any}>} */
+  /** @type {Array<{method: string, endpoint: string | RegExp, callbacks: (req: ServerRequest, res: ServerResponse) => any}>} */
   routes = [];
   /** @type {Array<{endpoint:string|RegExp,callback:Function}>} */
   middlewares = [];
@@ -89,7 +96,7 @@ class Server {
 
   /**
    * @param {string|RegExp} endpoint
-   * @param {(request: IncomingMessage, response: ServerResponse<http.IncomingMessage> & {req: IncomingMessage;}) => any} callback
+   * @param {...RouteHandlerCallbacks} callbacks
    */
   get(endpoint, ...callbacks) {
     this.routes.push({ method: "get", endpoint, callbacks });
@@ -97,7 +104,7 @@ class Server {
 
   /**
    * @param {string|RegExp} endpoint
-   * @param {(request: IncomingMessage, response: ServerResponse<http.IncomingMessage> & {req: IncomingMessage;}) => any} callbacks
+   * @param {...RouteHandlerCallbacks} callbacks
    */
   post(endpoint, ...callbacks) {
     this.routes.push({ method: "post", endpoint, callbacks });
@@ -116,8 +123,8 @@ class Server {
       return false;
     }
     const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
-    return typeof endpoint === "string"
-      ? endpoint === url.pathname
+    return typeof endpoint === "string" ?
+        endpoint === url.pathname
       : endpoint.test(url.pathname);
   }
 }
