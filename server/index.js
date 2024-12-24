@@ -1,7 +1,7 @@
 const gameController = require("./controllers/gameController.js");
 const userController = require("./controllers/userController.js");
 const { body, cors } = require("./middewares.js");
-const { Server } = require("./server.js");
+const { Server, cookies } = require("./server.js");
 
 const server = new Server();
 
@@ -26,10 +26,7 @@ server.get("/game/new", async (req, res) => {
 });
 
 server.get(/\/game\/\d+\/reveal-tile/, async (req, res) => {
-  let cookie = req.headers.cookie || "";
-  cookie = cookie.split("; ").map((c) => c.split("="));
-  const userIdCookie = cookie.find(([key]) => key === "userId");
-  const userId = userIdCookie ? userIdCookie[1] : null;
+  const userId = cookies().get("userId");
 
   const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
   let coordinate = url.searchParams.get("coordinate");
@@ -57,10 +54,7 @@ server.get(/\/game\/\d+\/reveal-tile/, async (req, res) => {
 });
 
 server.get(/\/game\/\d+\/reveal-adj-tiles/, async (req, res) => {
-  let cookie = req.headers.cookie || "";
-  cookie = cookie.split("; ").map((c) => c.split("="));
-  const userIdCookie = cookie.find(([key]) => key === "userId");
-  const userId = userIdCookie ? userIdCookie[1] : null;
+  const userId = cookies().get("userId");
 
   const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
   let coordinate = url.searchParams.get("coordinate");

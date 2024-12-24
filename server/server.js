@@ -1,3 +1,4 @@
+const { AsyncLocalStorage } = require("node:async_hooks");
 const http = require("node:http");
 const util = require("util");
 
@@ -26,6 +27,9 @@ const util = require("util");
 * - Adding a 'readable' event handler automatically make the stream stop flowing
   - Resume flow again when remove 'readable' event
 */
+
+/** @type {AsyncLocalStorage<http.IncomingMessage>} requestStorage */
+const requestStorage = new AsyncLocalStorage();
 
 /**
  * @typedef {http.ServerResponse<http.IncomingMessage> & {req: IncomingMessage} & {json: <T>(params: T) => any}} ServerResponse
@@ -59,38 +63,40 @@ class Server {
   }
 
   handleNewRequest() {
-    this.#server.on("request", async (req, res) => {
-      res.json = (input) => {
-        res.setHeader("Content-Type", "application/json");
-        return res.end(JSON.stringify(input));
-      };
+    this.#server.on("request", (req, res) => {
+      requestStorage.run(req, async () => {
+        res.json = (input) => {
+          res.setHeader("Content-Type", "application/json");
+          return res.end(JSON.stringify(input));
+        };
 
-      for (const route of this.routes) {
-        const isRequestMatch =
-          this.isMatchMethod(req, route.method) &&
-          this.isMatchEndpoint(req, route.endpoint);
-        if (!isRequestMatch) {
-          continue;
-        }
-
-        for (const middleware of this.middlewares) {
-          if (!this.isMatchEndpoint(req, middleware.endpoint)) {
+        for (const route of this.routes) {
+          const isRequestMatch =
+            this.isMatchMethod(req, route.method) &&
+            this.isMatchEndpoint(req, route.endpoint);
+          if (!isRequestMatch) {
             continue;
           }
-          const result = middleware.callback(req, res);
-          if (util.types.isPromise(result)) {
-            await result;
-          }
-        }
 
-        for (const callback of route.callbacks) {
-          const result = callback(req, res);
-          if (util.types.isPromise(result)) {
-            await result;
+          for (const middleware of this.middlewares) {
+            if (!this.isMatchEndpoint(req, middleware.endpoint)) {
+              continue;
+            }
+            const result = middleware.callback(req, res);
+            if (util.types.isPromise(result)) {
+              await result;
+            }
           }
-          return;
+
+          for (const callback of route.callbacks) {
+            const result = callback(req, res);
+            if (util.types.isPromise(result)) {
+              await result;
+            }
+            return;
+          }
         }
-      }
+      });
     });
   }
 
@@ -129,4 +135,13 @@ class Server {
   }
 }
 
-module.exports = { Server };
+function cookies() {
+  const request = requestStorage.getStore();
+  if (!request) {
+    throw new Error("This function must be call within a request");
+  }
+  let cookies = request.headers.cookie;
+  return new URLSearchParams(cookies.split("; ").map((c) => c.split("=")));
+}
+
+module.exports = { Server, cookies };
