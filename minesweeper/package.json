@@ -9,7 +9,6 @@
   "author": "nick",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^22.7.7",
-    "node-cron": "^3.0.3"
+    "@types/node": "^22.7.7"
   }
 }
