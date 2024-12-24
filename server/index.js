@@ -6,7 +6,10 @@ const { Server, cookies } = require("./server.js");
 const server = new Server();
 
 server.use(/.*/, body());
-server.use(/.*/, cors());
+server.use(
+  /.*/,
+  cors({ "Access-Control-Allow-Origin": "http://localhost:5173" }),
+);
 
 server.get("/game/new", async (req, res) => {
   const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
