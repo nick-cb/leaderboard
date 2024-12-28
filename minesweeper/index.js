@@ -274,7 +274,7 @@ class MineSweeper {
       this.result = 0;
     }
 
-    this.finishGame(this.result);
+    this.finishGame();
   }
 
   startGame() {
@@ -285,8 +285,8 @@ class MineSweeper {
     }, 999 * 1000);
   }
 
-  finishGame(result) {
-    if (!result) {
+  finishGame() {
+    if (!this.isFinished()) {
       return;
     }
     if (this.endTime === 0) this.endTime = Date.now();

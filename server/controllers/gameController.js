@@ -122,9 +122,7 @@ async function revealTile(gameId, userId, { x, y }) {
         click_count: sql`click_count+1`,
         left_click_count: sql`left_click_count+1`,
         result: minesweeper.result ?? null,
-        end_time: minesweeper.isFinished()
-          ? new Date(minesweeper.endTime)
-          : sql`end_time`,
+        end_time: minesweeper.isFinished() ? new Date(minesweeper.endTime) : sql`end_time`,
       })
       .where(eq("ID", gameId));
     if (minesweeper.isFinished() && minesweeper.result === 1) {
@@ -158,9 +156,7 @@ async function revealAdjTiles(gameId, userId, { x, y }) {
         click_count: sql`click_count+1`,
         left_click_count: sql`left_click_count+1`,
         result: minesweeper.result ?? null,
-        end_time: minesweeper.isFinished()
-          ? new Date(minesweeper.endTime)
-          : sql`end_time`,
+        end_time: minesweeper.isFinished() ? new Date(minesweeper.endTime) : sql`end_time`,
       })
       .where(eq("ID", gameId));
     if (minesweeper.isFinished() && minesweeper.result === 1) {
@@ -206,32 +202,19 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     return game;
   }
 
-  const [gameRows, __] = await db
-    .select([
-      "row_count",
-      "col_count",
-      "result",
-      "start_time",
-      "end_time",
-      "result",
-    ])
+  const [gameRows] = await db
+    .select(["row_count", "col_count", "result", "start_time", "end_time", "result"])
     .from("games")
     .where(eq("ID", gameId));
   game = gameRows[0];
-  if (!game) {
-    return null;
-  }
-
+  if (!game) return null;
   const [cellRows, ___] = await db
     .select(["constant", "x", "y", "is_flagged", "is_revealed"])
     .from("cells")
     .where(eq("game_id", gameId))
     .orderBy({ x: 1, y: 1 });
 
-  const startTime = game.startTime;
-  const result = game.result;
-  const ID = game.ID;
-  game = MineSweeper.from({
+  const minesweeper = MineSweeper.from({
     rows: game.row_count,
     cols: game.col_count,
     tiles: cellRows.map((cell) => ({
@@ -242,12 +225,12 @@ async function getGameFromPoolOrFromDatabase(gameId) {
       isRevealed: !!parseInt(cell.is_revealed.toString()),
     })),
   });
-  game.startTime = startTime;
-  game.result = result;
-  game.ID = ID;
+  minesweeper.ID = game.ID;
+  minesweeper.startTime = game.startTime;
+  minesweeper.result = game.result;
 
-  gamePool.push([gameId, game]);
-  return game;
+  gamePool.push([gameId, minesweeper]);
+  return minesweeper;
 }
 
 /** @param {Date} date */
@@ -268,23 +251,13 @@ function convertDateToSqlDate(date) {
  */
 async function calculateScore(userId, minesweeper) {
   const [userRow] = await db
-    .select([
-      "win_streak_mode2",
-      "best_win_streak_mode2",
-      "best_time_mode2",
-      "total_wins_mode2",
-    ])
+    .select(["win_streak_mode2", "best_win_streak_mode2", "best_time_mode2", "total_wins_mode2"])
     .from("users")
     .where(eq("ID", userId));
   const user = userRow[0];
   const time = minesweeper.endTime - minesweeper.startTime;
-  const bestTime = !user.best_time_mode2
-    ? time
-    : Math.min(user.best_time_mode2, time);
-  const winStreak = Math.max(
-    user.win_streak_mode2 + 1,
-    user.best_win_streak_mode2,
-  );
+  const bestTime = !user.best_time_mode2 ? time : Math.min(user.best_time_mode2, time);
+  const winStreak = Math.max(user.win_streak_mode2 + 1, user.best_win_streak_mode2);
   const winCount = user.total_wins_mode2 + 1;
 
   /* - win score
