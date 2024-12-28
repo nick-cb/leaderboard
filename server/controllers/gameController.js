@@ -127,6 +127,7 @@ async function revealTile(gameId, userId, { x, y }) {
       .where(eq("ID", gameId));
     if (minesweeper.isFinished() && minesweeper.result === 1) {
       const score = await calculateScore(userId, minesweeper);
+      console.log({ score });
       await db.update("users").set({ trophies: score }).where(eq("ID", userId));
     }
   }
@@ -259,12 +260,18 @@ async function calculateScore(userId, minesweeper) {
   const bestTime = !user.best_time_mode2 ? time : Math.min(user.best_time_mode2, time);
   const winStreak = Math.max(user.win_streak_mode2 + 1, user.best_win_streak_mode2);
   const winCount = user.total_wins_mode2 + 1;
+  console.log({ bestTime, winStreak, winCount });
 
   /* - win score
    * - time score
    * - mastery: number of wins out of 100 games
    */
 
+  console.log({
+    a: calculateWinStreakScore({ winStreak }),
+    b: calculateBestTimeScore({ bestTime }),
+    c: calculateMasteryScore({ winCount }),
+  });
   return (
     calculateWinStreakScore({ winStreak }) +
     calculateBestTimeScore({ bestTime }) +
@@ -286,9 +293,11 @@ function calculateBestTimeScore({ bestTime }) {
   for (let i = 0; i < timeScores.length; i++) {
     const [score, time] = timeScores[i];
     if (bestTime === time) {
+      console.log({ i, bestTime, time });
       return parseInt(score);
     }
     if (bestTime > time) {
+      console.log({ i, bestTime, time, score: timeScores[i], previousScore: timeScores[i - 1] });
       const [_, previousTime] = timeScores[i - 1];
       const timeDiff = (time - previousTime) / 10;
       const slowerBy = Math.round(bestTime - time);
