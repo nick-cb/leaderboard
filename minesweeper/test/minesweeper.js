@@ -114,4 +114,66 @@ describe("minesweeper test", () => {
 
     assert.equal(minesweeper.calculate3bv(), 13);
   });
+
+  it("should start game", () => {
+    const minesweeper = MineSweeper.from([
+      [0, 0, 0, 0, 0, 1, 3, 9],
+      [0, 0, 0, 0, 1, 3, 9, 9],
+      [0, 0, 1, 2, 3, 9, 9, 3],
+      [0, 0, 1, 9, 9, 3, 2, 1],
+      [0, 0, 1, 2, 2, 1, 0, 0],
+      [0, 0, 1, 1, 2, 1, 1, 0],
+      [0, 0, 1, 9, 2, 9, 2, 1],
+      [0, 0, 1, 1, 2, 1, 2, 9],
+    ]);
+
+    minesweeper.revealTile({ x: 0, y: 0 });
+
+    assert.equal(minesweeper.result, undefined);
+    assert.equal(minesweeper.isFinished(), false);
+  });
+
+  it("should end game when reveal mine", () => {
+    const minesweeper = MineSweeper.from([
+      [0, 0, 0, 0, 0, 1, 3, 9],
+      [0, 0, 0, 0, 1, 3, 9, 9],
+      [0, 0, 1, 2, 3, 9, 9, 3],
+      [0, 0, 1, 9, 9, 3, 2, 1],
+      [0, 0, 1, 2, 2, 1, 0, 0],
+      [0, 0, 1, 1, 2, 1, 1, 0],
+      [0, 0, 1, 9, 2, 9, 2, 1],
+      [0, 0, 1, 1, 2, 1, 2, 9],
+    ]);
+
+    assert.equal(minesweeper.result, undefined);
+    assert.equal(minesweeper.isFinished(), false);
+
+    minesweeper.revealTile({ x: 7, y: 0 });
+
+    assert.equal(minesweeper.result, 0);
+    assert.equal(minesweeper.isFinished(), true);
+  });
+
+  it("should end game when exceed time", () => {
+    const minesweeper = MineSweeper.from([
+      [0, 0, 0, 0, 0, 1, 3, 9],
+      [0, 0, 0, 0, 1, 3, 9, 9],
+      [0, 0, 1, 2, 3, 9, 9, 3],
+      [0, 0, 1, 9, 9, 3, 2, 1],
+      [0, 0, 1, 2, 2, 1, 0, 0],
+      [0, 0, 1, 1, 2, 1, 1, 0],
+      [0, 0, 1, 9, 2, 9, 2, 1],
+      [0, 0, 1, 1, 2, 1, 2, 9],
+    ]);
+
+    assert.equal(minesweeper.result, undefined);
+    assert.equal(minesweeper.isFinished(), false);
+
+    minesweeper.revealTile({ x: 7, y: 0 });
+
+    minesweeper.endTime = minesweeper.startGame + 999 * 1000;
+    minesweeper.updateGameState();
+    assert.equal(minesweeper.result, 0);
+    assert.equal(minesweeper.isFinished(), true);
+  });
 });

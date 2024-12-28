@@ -47,6 +47,7 @@ class Tile {
 }
 
 class MineSweeper {
+  ID = -1;
   rows = 0;
   cols = 0;
   mines = 0;
@@ -188,15 +189,13 @@ class MineSweeper {
   revealTile({ x, y }, callback) {
     const tile = this.board[y][x];
     if (!tile.isRevealable()) return [];
-    if (this.startTime === 0) this.startTime = Date.now();
+    if (this.startTime === 0) this.startGame();
 
     this.leftClicks += 1;
     const revealedTiles = this.#revealTile({ x, y }, callback);
     this.revealedTileCount += revealedTiles.length;
     this.trail.push(...revealedTiles);
-    if (this.shouldEndGame(revealedTiles) !== undefined) {
-      this.finishGame(this.shouldEndGame(revealedTiles));
-    }
+    this.updateGameState(revealedTiles);
 
     return revealedTiles;
   }
@@ -239,16 +238,11 @@ class MineSweeper {
         continue;
       }
       revealedTiles.push(...this.#revealTile({ x, y }));
-      if (this.shouldEndGame(revealedTiles) !== undefined) {
-        this.finishGame(this.shouldEndGame(revealedTiles));
-        break;
-      }
+      this.updateGameState(revealedTiles);
     }
     this.revealedTileCount += revealedTiles.length;
     this.trail.push(...revealedTiles);
-    if (this.shouldEndGame(revealedTiles) !== undefined) {
-      this.finishGame(this.shouldEndGame(revealedTiles));
-    }
+    this.updateGameState(revealedTiles);
 
     return revealedTiles;
   }
@@ -263,31 +257,45 @@ class MineSweeper {
     return tile;
   }
 
-  shouldEndGame(revealedTiles) {
-    const lastTile = revealedTiles.at(-1);
-    if (!lastTile) {
-      return undefined;
+  updateGameState(revealedTiles = []) {
+    if (this.isFinished()) {
+      return;
     }
-    if (lastTile.constant === 9 && lastTile.isRevealed) {
-      return 0;
+
+    const lastTile = revealedTiles.at(-1);
+    if (lastTile && lastTile.constant === 9 && lastTile.isRevealed) {
+      this.result = 0;
     }
 
     const win = this.revealedTileCount === this.rows * this.cols - this.mines;
-    if (win) {
-      return 1;
+    if (win) this.result = 1;
+
+    if (Date.now() - this.startTime > 999 * 1000) {
+      this.result = 0;
     }
 
-    return undefined;
+    this.finishGame(this.result);
+  }
+
+  startGame() {
+    console.log("Start game: ", this.ID);
+    this.startTime = Date.now();
+    setTimeout(() => {
+      this.updateGameState();
+    }, 999 * 1000);
   }
 
   finishGame(result) {
+    if (!result) {
+      return;
+    }
     if (this.endTime === 0) this.endTime = Date.now();
-    this.result = result;
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.cols; x++) {
         this.board[y][x].isRevealed = true;
       }
     }
+    console.log("Finish game: ", this.ID);
   }
 
   isFinished() {

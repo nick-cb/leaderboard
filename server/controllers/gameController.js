@@ -48,6 +48,7 @@ async function newGame({ mode }) {
         });
       }),
     );
+    minesweeper.ID = gameId;
     gamePool.push([gameId, minesweeper]);
     return [gameId, minesweeper];
   }
@@ -229,6 +230,7 @@ async function getGameFromPoolOrFromDatabase(gameId) {
 
   const startTime = game.startTime;
   const result = game.result;
+  const ID = game.ID;
   game = MineSweeper.from({
     rows: game.row_count,
     cols: game.col_count,
@@ -242,6 +244,7 @@ async function getGameFromPoolOrFromDatabase(gameId) {
   });
   game.startTime = startTime;
   game.result = result;
+  game.ID = ID;
 
   gamePool.push([gameId, game]);
   return game;
