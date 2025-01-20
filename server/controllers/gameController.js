@@ -126,9 +126,7 @@ async function revealTile(gameId, userId, { x, y }) {
       })
       .where(eq("ID", gameId));
     if (minesweeper.isFinished() && minesweeper.result === 1) {
-      const score = await calculateScore(userId, minesweeper);
-      console.log({ score });
-      await db.update("users").set({ trophies: score }).where(eq("ID", userId));
+      await updateUserScore(userId, minesweeper);
     }
   }
 
@@ -161,8 +159,7 @@ async function revealAdjTiles(gameId, userId, { x, y }) {
       })
       .where(eq("ID", gameId));
     if (minesweeper.isFinished() && minesweeper.result === 1) {
-      const score = await calculateScore(userId, minesweeper);
-      await db.update("users").set({ trophies: score }).where(eq("ID", userId));
+      await updateUserScore(userId, minesweeper);
     }
   }
 
@@ -194,6 +191,42 @@ async function toggleFlagMine(gameId, { x, y }) {
       .set({ result: minesweeper.isLost || minesweeper.isWon })
       .where(eq("ID", gameId));
   }
+  return minesweeper;
+}
+
+async function sudoFinishGame(gameId, { result }) {
+  const minesweeper = await getGameFromPoolOrFromDatabase(gameId);
+  if (minesweeper.isFinished()) {
+    return minesweeper;
+  }
+
+  if (result === 1) {
+    for (let y = 0; y < minesweeper.rows; y++) {
+      for (let x = 0; x < minesweeper.cols; x++) {
+        const tile = minesweeper.board[y][x];
+        if (tile.isRevealable() && tile.constant < 9) {
+          minesweeper.revealTile({ x: tile.x, y: tile.y });
+        }
+      }
+    }
+  }
+
+  if (result === 0) {
+    for (let y = 0; y < minesweeper.rows; y++) {
+      for (let x = 0; x < minesweeper.cols; x++) {
+        const tile = minesweeper.board[y][x];
+        if (tile.constant === 9) {
+          minesweeper.revealTile({ x: tile.x, y: tile.y });
+          break;
+        }
+      }
+    }
+  }
+
+  if (minesweeper.isFinished() && minesweeper.result === 1) {
+    await updateUserScore(4, minesweeper);
+  }
+
   return minesweeper;
 }
 
@@ -250,7 +283,7 @@ function convertDateToSqlDate(date) {
  * @param {number} userId
  * @param {MineSweeper} minesweeper
  */
-async function calculateScore(userId, minesweeper) {
+async function updateUserScore(userId, minesweeper) {
   const [userRow] = await db
     .select(["win_streak_mode2", "best_win_streak_mode2", "best_time_mode2", "total_wins_mode2"])
     .from("users")
@@ -260,23 +293,21 @@ async function calculateScore(userId, minesweeper) {
   const bestTime = !user.best_time_mode2 ? time : Math.min(user.best_time_mode2, time);
   const winStreak = Math.max(user.win_streak_mode2 + 1, user.best_win_streak_mode2);
   const winCount = user.total_wins_mode2 + 1;
-  console.log({ bestTime, winStreak, winCount });
 
-  /* - win score
-   * - time score
-   * - mastery: number of wins out of 100 games
-   */
-
-  console.log({
-    a: calculateWinStreakScore({ winStreak }),
-    b: calculateBestTimeScore({ bestTime }),
-    c: calculateMasteryScore({ winCount }),
-  });
-  return (
+  const score =
     calculateWinStreakScore({ winStreak }) +
     calculateBestTimeScore({ bestTime }) +
-    calculateMasteryScore({ winCount })
-  );
+    calculateMasteryScore({ winCount });
+
+  await db
+    .update("users")
+    .set({
+      trophies: score,
+      // best_win_streak_mode2: bestTime,
+      // best_time_mode2: winStreak,
+      // total_wins_mode2: winCount,
+    })
+    .where(eq("ID", userId));
 }
 
 function calculateWinStreakScore({ winStreak }) {
@@ -318,4 +349,5 @@ module.exports = {
   revealAdjTiles,
   toggleFlagMine,
   getGameFromPoolOrFromDatabase,
+  sudoFinishGame,
 };

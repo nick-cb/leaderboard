@@ -72,8 +72,8 @@ class Server {
 
         for (const route of this.routes) {
           const isRequestMatch =
-            this.isMatchMethod(req, route.method) &&
-            this.isMatchEndpoint(req, route.endpoint);
+            this.isMatchMethod(req, route.method) && this.isMatchEndpoint(req, route.endpoint);
+          console.log(route, isRequestMatch);
           if (!isRequestMatch) {
             continue;
           }
@@ -129,9 +129,7 @@ class Server {
       return false;
     }
     const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
-    return typeof endpoint === "string" ?
-        endpoint === url.pathname
-      : endpoint.test(url.pathname);
+    return typeof endpoint === "string" ? endpoint === url.pathname : endpoint.test(url.pathname);
   }
 }
 
@@ -140,8 +138,12 @@ function cookies() {
   if (!request) {
     throw new Error("This function must be call within a request");
   }
-  let cookies = request.headers.cookie;
-  return new URLSearchParams(cookies.split("; ").map((c) => c.split("=")));
+  let cookies = request.headers.cookie || "";
+  cookies = cookies
+    .split("; ")
+    .filter(Boolean)
+    .map((c) => c.split("="));
+  return new URLSearchParams(cookies);
 }
 
 module.exports = { Server, cookies };

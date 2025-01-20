@@ -48,7 +48,9 @@ function body() {
     if (contentType === "application/json") {
       req.body = JSON.parse(data);
     }
-    if (contentType === "application/x-www-form-urlencoded") {
+    const isFormData =
+      contentType === "application/x-www-form-urlencoded" || contentType === "multipart/form-data";
+    if (isFormData) {
       data = new URLSearchParams(data);
       const formData = new FormData();
       for (const [key, value] of data) {
