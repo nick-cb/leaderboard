@@ -107,15 +107,23 @@ async function revealTile(gameId, userId, { x, y }) {
   }
   const tiles = minesweeper.revealTile({ x, y });
   if (tiles.length) {
-    await db
-      .update("cells")
-      .set({ is_revealed: true })
-      .where(
-        and(
-          eq("game_id", gameId),
-          or(...tiles.map((tile) => and(eq("x", tile.x), eq("y", tile.y)))),
-        ),
-      );
+    await Promise.allSettled(
+      tiles.map((tile) => {
+        return db
+          .update("cells")
+          .set({ is_revealed: true, timestamp: new Date(tile.timestamp) })
+          .where(and(eq("game_id", gameId), eq("x", tile.x), eq("y", tile.y)));
+      }),
+    );
+    // await db
+    //   .update("cells")
+    //   .set({ is_revealed: true })
+    //   .where(
+    //     and(
+    //       eq("game_id", gameId),
+    //       or(...tiles.map((tile) => and(eq("x", tile.x), eq("y", tile.y)))),
+    //     ),
+    //   );
     await db
       .update("games")
       .set({
@@ -140,15 +148,23 @@ async function revealAdjTiles(gameId, userId, { x, y }) {
   }
   const tiles = minesweeper.revealAdjTiles({ x, y });
   if (tiles.length) {
-    await db
-      .update("cells")
-      .set({ is_revealed: true })
-      .where(
-        and(
-          eq("game_id", gameId),
-          or(...tiles.map((tile) => and(eq("x", tile.x), eq("y", tile.y)))),
-        ),
-      );
+    await Promise.allSettled(
+      tiles.map((tile) => {
+        return db
+          .update("cells")
+          .set({ is_revealed: true, timestamp: new Date(tile.timestamp) })
+          .where(and(eq("game_id", gameId), eq("x", tile.x), eq("y", tile.y)));
+      }),
+    );
+    // await db
+    //   .update("cells")
+    //   .set({ is_revealed: true })
+    //   .where(
+    //     and(
+    //       eq("game_id", gameId),
+    //       or(...tiles.map((tile) => and(eq("x", tile.x), eq("y", tile.y)))),
+    //     ),
+    //   );
     await db
       .update("games")
       .set({
@@ -175,8 +191,12 @@ async function toggleFlagMine(gameId, { x, y }) {
   if (tile) {
     await db
       .update("cells")
-      .set({ is_flagged: true })
-      .where(sql`game_id=${gameId} and (x=${tile.x} and y=${tile.y})`);
+      .set({ is_flagged: true, timestamp: new Date(tile.timestamp) })
+      .where(and(eq("game_id", gameId), eq("x", tile.x), eq("y", tile.y)));
+    // await db
+    //   .update("cells")
+    //   .set({ is_flagged: true })
+    //   .where(sql`game_id=${gameId} and (x=${tile.x} and y=${tile.y})`);
   }
   await db
     .update("games")

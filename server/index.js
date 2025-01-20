@@ -171,3 +171,7 @@ server.post("/$sudo/finish-game", async (req, res) => {
     return res.end("Not found");
   }
 });
+
+server.get('/\/game\/\d+/timeline', async (req, res) => {
+
+});
