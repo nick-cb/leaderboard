@@ -13,8 +13,7 @@ function cors(userCors = {}) {
    * @param {http.IncomingMessage} req
    * @param {http.ServerResponse<http.IncomingMessage> & {req: IncomingMessage}} res
    */
-  return (req, res) => {
-    console.log("apply cors middleware", defaultCors);
+  const cors = (req, res) => {
     for (const key in defaultCors) {
       if (userCors[key]) {
         res.setHeader(key, userCors[key]);
@@ -23,11 +22,13 @@ function cors(userCors = {}) {
       }
     }
   };
+
+  return cors;
 }
 
 function body() {
   /** @param {http.IncomingMessage} req */
-  return async (req, res) => {
+  const body = async (req, res) => {
     /** @type {Buffer|undefined} data */
     let data;
     for await (const chunk of req) {
@@ -57,13 +58,15 @@ function body() {
       req.body = formData;
     }
   };
+  return body;
 }
 
 function url() {
   /** @param {http.IncomingMessage} req */
-  return (req, res) => {
+  const url = (req, res) => {
     req.parsedUrl = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
   };
+  return url;
 }
 
 module.exports = { cors, body, url };

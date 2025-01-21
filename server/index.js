@@ -176,9 +176,9 @@ server.post(/\/game\/\d+\/log-action/, async (req, res) => {
   try {
     const body = req.body;
     const action = body.action; // mouseup
-    const coordinate = body.coordinate;
+    const coordinate = body.coordinate.split(",");
     const timestamp = body.timestamp;
-    const id = url.pathname.split("/")[2];
+    const id = req.parsedUrl.pathname.split("/")[2];
     const userId = cookies().get("userId");
     console.log({ body });
 

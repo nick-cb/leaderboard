@@ -70,13 +70,19 @@ class Server {
           return res.end(JSON.stringify(input));
         };
 
+        console.log(
+          util.styleText("green", req.method.toUpperCase()),
+          util.styleText("green", req.url),
+        );
+        await this.applyMiddlewares(req, res);
+
         for (const route of this.routes) {
           if (!this.isMatchEndpoint(req, route.endpoint)) {
             continue;
           }
 
           if (req.method === "OPTIONS") {
-            this.applyMiddlewares(req, res);
+            console.log("-> detect pre-flight request, response immidiately");
             return res.end();
           }
 
@@ -84,7 +90,7 @@ class Server {
             continue;
           }
 
-          await this.applyMiddlewares(req, res);
+          console.log("-> Handling request");
           for (const callback of route.callbacks) {
             const result = callback(req, res);
             if (util.types.isPromise(result)) {
@@ -132,12 +138,15 @@ class Server {
   async applyMiddlewares(req, res) {
     for (const middleware of this.middlewares) {
       if (!this.isMatchEndpoint(req, middleware.endpoint)) {
+        console.log("-> skip middleware:", middleware.callback.name);
         continue;
       }
+      console.log("-> applying middleware:", middleware.callback.name);
       const result = middleware.callback(req, res);
       if (util.types.isPromise(result)) {
         await result;
       }
+      console.log("-> applied middleware:", middleware.callback.name);
     }
   }
 }
