@@ -71,23 +71,20 @@ class Server {
         };
 
         for (const route of this.routes) {
-          const isRequestMatch =
-            this.isMatchMethod(req, route.method) && this.isMatchEndpoint(req, route.endpoint);
-          console.log(route, isRequestMatch);
-          if (!isRequestMatch) {
+          if (!this.isMatchEndpoint(req, route.endpoint)) {
             continue;
           }
 
-          for (const middleware of this.middlewares) {
-            if (!this.isMatchEndpoint(req, middleware.endpoint)) {
-              continue;
-            }
-            const result = middleware.callback(req, res);
-            if (util.types.isPromise(result)) {
-              await result;
-            }
+          if (req.method === "OPTIONS") {
+            this.applyMiddlewares(req, res);
+            return res.end();
           }
 
+          if (!this.isMatchMethod(req, route.method)) {
+            continue;
+          }
+
+          await this.applyMiddlewares(req, res);
           for (const callback of route.callbacks) {
             const result = callback(req, res);
             if (util.types.isPromise(result)) {
@@ -130,6 +127,18 @@ class Server {
     }
     const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
     return typeof endpoint === "string" ? endpoint === url.pathname : endpoint.test(url.pathname);
+  }
+
+  async applyMiddlewares(req, res) {
+    for (const middleware of this.middlewares) {
+      if (!this.isMatchEndpoint(req, middleware.endpoint)) {
+        continue;
+      }
+      const result = middleware.callback(req, res);
+      if (util.types.isPromise(result)) {
+        await result;
+      }
+    }
   }
 }
 

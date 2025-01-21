@@ -5,14 +5,16 @@ const defaultCors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
   "Access-Control-Max-Age": 2592000,
+  "Access-Control-Allow-Headers": "Content-Type",
 };
 /** @param {Partial<typeof defaultCors>} userCors */
-function cors(userCors) {
+function cors(userCors = {}) {
   /**
    * @param {http.IncomingMessage} req
    * @param {http.ServerResponse<http.IncomingMessage> & {req: IncomingMessage}} res
    */
   return (req, res) => {
+    console.log("apply cors middleware", defaultCors);
     for (const key in defaultCors) {
       if (userCors[key]) {
         res.setHeader(key, userCors[key]);
@@ -20,10 +22,6 @@ function cors(userCors) {
         res.setHeader(key, defaultCors[key]);
       }
     }
-    // res.setHeader("Access-Control-Allow-Credentials", true);
-    // res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
-    // res.setHeader("Access-Control-Allow-Methods", "OPTIONS, POST, GET");
-    // res.setHeader("Access-Control-Max-Age", 2592000);
   };
 }
 
@@ -61,4 +59,11 @@ function body() {
   };
 }
 
-module.exports = { cors, body };
+function url() {
+  /** @param {http.IncomingMessage} req */
+  return (req, res) => {
+    req.parsedUrl = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
+  };
+}
+
+module.exports = { cors, body, url };

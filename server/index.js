@@ -1,12 +1,13 @@
 const gameController = require("./controllers/gameController.js");
 const userController = require("./controllers/userController.js");
-const { body, cors } = require("./middewares.js");
+const { body, cors, url } = require("./middewares.js");
 const { Server, cookies } = require("./server.js");
 
 const server = new Server();
 
 server.use(/.*/, body());
 server.use(/.*/, cors({ "Access-Control-Allow-Origin": "http://localhost:5173" }));
+server.use(/.*/, url());
 
 server.get("/game/new", async (req, res) => {
   const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
@@ -146,7 +147,7 @@ server.post("/login", async (req, res) => {
     res.statusCode = 302;
     res.setHeader("Location", "http://localhost:5173/");
     res.setHeader("Set-Cookie", [`userId=${payload.userId}`, `test=test`]);
-    res.end('success');
+    res.end("success");
   } catch (error) {
     console.log(error);
     res.json({ error: "Failed to login" });
@@ -154,10 +155,9 @@ server.post("/login", async (req, res) => {
 });
 
 server.post("/$sudo/finish-game", async (req, res) => {
-  console.log("a");
   try {
     const body = req.body;
-    console.log({body});
+    console.log({ body });
     const gameId = body.gameId;
     const result = body.result;
     if (cookies().get("userId") != 4) {
@@ -165,13 +165,33 @@ server.post("/$sudo/finish-game", async (req, res) => {
     }
 
     await gameController.sudoFinishGame(gameId, { result });
-    res.end('success');
+    res.end("success");
   } catch (error) {
     console.log(error);
     return res.end("Not found");
   }
 });
 
-server.get('/\/game\/\d+/timeline', async (req, res) => {
+server.post(/\/game\/\d+\/log-action/, async (req, res) => {
+  try {
+    const body = req.body;
+    const action = body.action; // mouseup
+    const coordinate = body.coordinate;
+    const timestamp = body.timestamp;
+    const id = url.pathname.split("/")[2];
+    const userId = cookies().get("userId");
+    console.log({ body });
 
+    await gameController.logUserAction(parseInt(id), userId, {
+      x: coordinate[0],
+      y: coordinate[1],
+      action,
+      timestamp,
+    });
+
+    res.json({ result: "success" });
+  } catch (error) {
+    console.log(error);
+    return res.json({ error: error.message });
+  }
 });

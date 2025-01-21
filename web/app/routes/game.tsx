@@ -194,6 +194,24 @@ function Cell(props: CellProps) {
       queryClient.setQueryData(["download-game", gameId], data);
     },
   });
+  const logActionMutation = useMutation({
+    mutationKey: ["log-action"],
+    mutationFn: async ({ gameId, coordinate }: any) => {
+      const headers = new Headers();
+      headers.set("Content-Type", "application/json");
+      headers.set("origin", "http://localhost:5173");
+      await fetch(`http://localhost:8000/game/${gameId}/log-action`, {
+        method: "POST",
+        credentials: "include",
+        headers,
+        body: JSON.stringify({
+          action: "mouseup",
+          coordinate: coordinate,
+          timestamp: Date.now(),
+        }),
+      });
+    },
+  });
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement>) {
     if (isRevealed) {
@@ -249,6 +267,7 @@ function Cell(props: CellProps) {
       return;
     }
     let coordinate: any = event.currentTarget.dataset["coordinate"];
+    logActionMutation.mutate({ gameId, coordinate });
 
     if (isRevealed && revealableNeigbors.length) {
       if (flaggedNeighbors.length === value) {

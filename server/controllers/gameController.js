@@ -250,6 +250,17 @@ async function sudoFinishGame(gameId, { result }) {
   return minesweeper;
 }
 
+async function logUserAction(gameId, userId, { x, y, action, timestamp }) {
+  await db.insert("user_action_log").values({
+    user_id: userId,
+    game_id: gameId,
+    action,
+    x,
+    y,
+    timestamp: new Date(timestamp),
+  });
+}
+
 async function getGameFromPoolOrFromDatabase(gameId) {
   let [_, game] = gamePool.find((g) => g[0] === gameId) || [];
   if (game) {
@@ -370,4 +381,5 @@ module.exports = {
   toggleFlagMine,
   getGameFromPoolOrFromDatabase,
   sudoFinishGame,
+  logUserAction,
 };
