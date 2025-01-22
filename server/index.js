@@ -109,6 +109,19 @@ server.get(/\/game\/\d+\/flag-tile/, async (req, res) => {
   });
 });
 
+server.get(/\/game\/\d+\/action-logs/, async (req, res) => {
+  try {
+    const id = req.parsedUrl.pathname.split("/")[2];
+    const userId = cookies().get("userId");
+
+    const logs = await gameController.getActionLogs(id, userId);
+    res.json(logs);
+  } catch (error) {
+    console.log(error);
+    return res.json({ error: error.message });
+  }
+});
+
 server.get(/\/game\/\d+/, async (req, res) => {
   const url = new URL(`http://${process.env.HOST ?? "localhost"}${req.url}`);
   let id = url.pathname.split("/")[2];
@@ -180,7 +193,6 @@ server.post(/\/game\/\d+\/log-action/, async (req, res) => {
     const timestamp = body.timestamp;
     const id = req.parsedUrl.pathname.split("/")[2];
     const userId = cookies().get("userId");
-    console.log({ body });
 
     await gameController.logUserAction(parseInt(id), userId, {
       x: coordinate[0],

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { queryClient } from "~/root";
 
@@ -71,6 +71,16 @@ export default function Game({ params }: any) {
     });
   }
 
+  useQuery({
+    queryKey: ["action-logs", gameId],
+    queryFn: async () => {
+      return await fetch(`http://localhost:8000/game/${gameId}/action-logs`, {
+        method: "GET",
+        credentials: "include",
+      });
+    },
+  });
+
   if (!data) {
     return <div>There is no game here</div>;
   }
@@ -122,6 +132,7 @@ export default function Game({ params }: any) {
           );
         })}
       </div>
+      <ProgressSlider />
     </div>
   );
 }
@@ -405,6 +416,43 @@ function Clock({ run }: { run: boolean }) {
       <div ref={ref} className={"clock text-[#CC0100] relative"}>
         000
       </div>
+    </div>
+  );
+}
+
+type ProgressSliderProps = {
+  duration: number;
+};
+function ProgressSlider(props: ProgressSliderProps) {
+  const { duration = 0 } = props;
+  const [value, setValue] = useState(0);
+  const [length, setLenght] = useState(0);
+
+  return (
+    <div className={"p-2 relative"}>
+      <input
+        type="range"
+        min={0}
+        max={duration * 1000}
+        step={1 / 1000}
+        onInput={(event) =>
+          setValue(Math.floor(event.currentTarget.valueAsNumber))
+        }
+        ref={useCallback((current: HTMLInputElement) => {
+          setLenght(current.clientWidth);
+        }, [])}
+        className={"action-logs-progress w-full"}
+      />
+      <div
+        className={
+          "action-logs-progress-thumb w-5 h-5 absolute left-0 top-1/2 -translate-y-1/2 cursor-pointer pointer-events-none"
+        }
+        style={{
+          transform: `translate(${
+            value / ((duration * 1000) / length)
+          }px,-50%)`,
+        }}
+      />
     </div>
   );
 }

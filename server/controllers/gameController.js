@@ -261,6 +261,21 @@ async function logUserAction(gameId, userId, { x, y, action, timestamp }) {
   });
 }
 
+async function getActionLogs(gameId, userId) {
+  const game = await getGameFromPoolOrFromDatabase(gameId);
+  if (!game) throw new Error("Not found game");
+  const logs = await db
+    .select(["ID", "action", "x", "y", "timestamp"])
+    .from("user_action_log")
+    .where(and(eq("game_id", gameId), eq("user_id", userId)));
+
+  return {
+    gameId: game.ID,
+    duration: game.endTime - game.startTime,
+    logs: logs[0],
+  };
+}
+
 async function getGameFromPoolOrFromDatabase(gameId) {
   let [_, game] = gamePool.find((g) => g[0] === gameId) || [];
   if (game) {
@@ -382,4 +397,5 @@ module.exports = {
   getGameFromPoolOrFromDatabase,
   sudoFinishGame,
   logUserAction,
+  getActionLogs,
 };

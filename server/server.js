@@ -76,20 +76,24 @@ class Server {
         );
         await this.applyMiddlewares(req, res);
 
+        console.log("-> Find matching route");
         for (const route of this.routes) {
           if (!this.isMatchEndpoint(req, route.endpoint)) {
+            console.log("\t->", route.method, route.endpoint, "NOT MATCHED ENDPOINT");
             continue;
           }
 
           if (req.method === "OPTIONS") {
-            console.log("-> detect pre-flight request, response immidiately");
+            console.log("\t-> detect pre-flight request, response immidiately");
             return res.end();
           }
 
           if (!this.isMatchMethod(req, route.method)) {
+            console.log("\t->", route.method, route.endpoint, "NOT MATCHED ENDPOINT METHOD");
             continue;
           }
 
+          console.log("\t->", route.method, route.endpoint, "MATCHED ENDPOINT");
           console.log("-> Handling request");
           for (const callback of route.callbacks) {
             const result = callback(req, res);

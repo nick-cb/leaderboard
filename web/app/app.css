@@ -296,3 +296,99 @@ html {
   transform-origin: bottom right;
   transform: rotate(-90deg);
 }
+
+input[type="range"].action-logs-progress {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-color: #8f989f;
+  box-shadow: inset 1px 1px #232a32, inset -1px -1px #6f7880;
+}
+
+input[type="range"].action-logs-progress::-webkit-slider-runnable-track {
+  @apply h-3 bg-none;
+}
+
+/******** Firefox ********/
+input[type="range"].action-logs-progress::-moz-range-track {
+  @apply h-3 bg-none;
+}
+
+/***** Chrome, Safari, Opera, and Edge Chromium *****/
+input[type="range"].action-logs-progress::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  margin-top: -4px; /* Centers thumb on the track */
+  background-color: transparent;
+  /* box-shadow: inset 3px 3px #6f7880, inset -3px -3px #232a32; */
+  /* display: none; */
+  /* box-shadow: 1px 1px 0px 3px black, inset 1px 1px #232a32, -1px -1px 0px 3px white; */
+  /* outline outline-[3px] outline-[#697078] */
+  @apply h-5 w-5 relative z-[1];
+}
+
+/***** Firefox *****/
+input[type="range"].action-logs-progress::-moz-range-thumb {
+  border: none; /*Removes extra border that FF applies*/
+  appearance: none;
+  border-radius: 0; /*Removes default border-radius that FF applies*/
+  background-color: white;
+  /* display: none; */
+  @apply h-4 w-4 relative z-[1];
+}
+
+/* Removes default focus */
+input[type="range"].action-logs-progress:focus {
+  outline: none;
+}
+
+/***** Chrome, Safari, Opera, and Edge Chromium *****/
+/* input[type="range"].action-logs-progress:focus::-webkit-slider-thumb { */
+/*   @apply border border-white/60 outline outline-1 outline-white; */
+/*   outline-offset: 0.125rem; */
+/*   appearance: none; */
+/* } */
+
+/******** Firefox ********/
+/* input[type="range"].action-logs-progress:focus::-moz-range-thumb { */
+/*   @apply border border-white/60 outline outline-1 outline-white; */
+/*   outline-offset: 0.125rem; */
+/*   appearance: none; */
+/* } */
+
+/* .action-logs-progress-thumb { */
+/*   box-shadow: inset 3px 3px #6f7880, inset -3px -3px #6f7880, */
+/*     inset 4px 4px #232a32, 1px 1px 1px #232a32, 0px 0px 1px #93a0ab; */
+/* } */
+
+.action-logs-progress-thumb {
+  background-color: #4d545c;
+  box-shadow: inset 3px 3px #6f7880, inset -3px -3px #232a32;
+}
+
+.action-logs-progress-thumb::before {
+  content: "";
+  display: block;
+  width: 3px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  bottom: -3px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.action-logs-progress-thumb::after {
+  content: "";
+  display: block;
+  width: 3px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  top: -3px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
+}
