@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { queryClient } from "~/root";
+import { Play } from "lucide-react";
 
 export default function Game({ params }: any) {
   let navigate = useNavigate();
@@ -71,13 +72,17 @@ export default function Game({ params }: any) {
     });
   }
 
-  useQuery({
+  const { data: actionLogData } = useQuery({
     queryKey: ["action-logs", gameId],
     queryFn: async () => {
-      return await fetch(`http://localhost:8000/game/${gameId}/action-logs`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `http://localhost:8000/game/${gameId}/action-logs`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+      return response.json();
     },
   });
 
@@ -132,7 +137,7 @@ export default function Game({ params }: any) {
           );
         })}
       </div>
-      <ProgressSlider />
+      <ProgressSlider duration={actionLogData?.duration} />
     </div>
   );
 }
@@ -429,30 +434,33 @@ function ProgressSlider(props: ProgressSliderProps) {
   const [length, setLenght] = useState(0);
 
   return (
-    <div className={"p-2 relative"}>
-      <input
-        type="range"
-        min={0}
-        max={duration * 1000}
-        step={1 / 1000}
-        onInput={(event) =>
-          setValue(Math.floor(event.currentTarget.valueAsNumber))
-        }
-        ref={useCallback((current: HTMLInputElement) => {
-          setLenght(current.clientWidth);
-        }, [])}
-        className={"action-logs-progress w-full"}
-      />
-      <div
-        className={
-          "action-logs-progress-thumb w-5 h-5 absolute left-0 top-1/2 -translate-y-1/2 cursor-pointer pointer-events-none"
-        }
-        style={{
-          transform: `translate(${
-            value / ((duration * 1000) / length)
-          }px,-50%)`,
-        }}
-      />
+    <div className={"flex items-center gap-2 p-2"}>
+      <button className={"play-progress-btn w-7 h-7 flex justify-center items-center relative"}>
+        <Play className={"w-4 h-4"} color={"#AFB8BF"} fill={"#AFB8BF"} />
+      </button>
+      <div className={"relative w-full"}>
+        <input
+          type="range"
+          min={0}
+          max={duration}
+          step={1 / 1000}
+          onInput={(event) =>
+            setValue(Math.floor(event.currentTarget.valueAsNumber))
+          }
+          ref={useCallback((current: HTMLInputElement) => {
+            setLenght(current?.clientWidth ?? 0);
+          }, [])}
+          className={"action-logs-progress w-full"}
+        />
+        <div
+          className={
+            "action-logs-progress-thumb w-5 h-5 absolute left-0 top-1/2 -translate-y-1/2 cursor-pointer pointer-events-none"
+          }
+          style={{
+            transform: `translate(${value / (duration / length)}px,-50%)`,
+          }}
+        />
+      </div>
     </div>
   );
 }

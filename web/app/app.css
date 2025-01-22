@@ -392,3 +392,43 @@ input[type="range"].action-logs-progress:focus {
   transform-origin: bottom right;
   transform: rotate(-90deg);
 }
+
+.play-progress-btn {
+  box-shadow: inset 3px 3px #6f7880, inset -3px -3px #232a32;
+}
+
+.play-progress-btn::before {
+  content: "";
+  display: block;
+  width: 3px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  bottom: -3px;
+  left: 0px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.play-progress-btn::after {
+  content: "";
+  display: block;
+  width: 3px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #232a32;
+  top: -3px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
+}
+
+.play-progress-btn:active {
+  box-shadow: inset 4px 4px #232a32, inset -2px -2px #232a32;
+}
+
+.play-progress-btn:active svg {
+  transform: translateX(2px) translateY(2px);
+}
