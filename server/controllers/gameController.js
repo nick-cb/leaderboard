@@ -115,15 +115,6 @@ async function revealTile(gameId, userId, { x, y }) {
           .where(and(eq("game_id", gameId), eq("x", tile.x), eq("y", tile.y)));
       }),
     );
-    // await db
-    //   .update("cells")
-    //   .set({ is_revealed: true })
-    //   .where(
-    //     and(
-    //       eq("game_id", gameId),
-    //       or(...tiles.map((tile) => and(eq("x", tile.x), eq("y", tile.y)))),
-    //     ),
-    //   );
     await db
       .update("games")
       .set({
@@ -263,6 +254,7 @@ async function logUserAction(gameId, userId, { x, y, action, timestamp }) {
 
 async function getActionLogs(gameId, userId) {
   const game = await getGameFromPoolOrFromDatabase(gameId);
+  console.log(game);
   if (!game) throw new Error("Not found game");
   const logs = await db
     .select(["ID", "action", "x", "y", "timestamp"])
@@ -306,7 +298,8 @@ async function getGameFromPoolOrFromDatabase(gameId) {
     })),
   });
   minesweeper.ID = game.ID;
-  minesweeper.startTime = game.startTime;
+  minesweeper.startTime = game.start_time;
+  minesweeper.endTime = game.end_time;
   minesweeper.result = game.result;
 
   gamePool.push([gameId, minesweeper]);
