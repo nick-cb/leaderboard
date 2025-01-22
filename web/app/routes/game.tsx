@@ -196,7 +196,7 @@ function Cell(props: CellProps) {
   });
   const logActionMutation = useMutation({
     mutationKey: ["log-action"],
-    mutationFn: async ({ gameId, coordinate }: any) => {
+    mutationFn: async ({ gameId, coordinate, action }: any) => {
       const headers = new Headers();
       headers.set("Content-Type", "application/json");
       headers.set("origin", "http://localhost:5173");
@@ -205,7 +205,7 @@ function Cell(props: CellProps) {
         credentials: "include",
         headers,
         body: JSON.stringify({
-          action: "mouseup",
+          action,
           coordinate: coordinate,
           timestamp: Date.now(),
         }),
@@ -223,6 +223,7 @@ function Cell(props: CellProps) {
       gameId: gameId,
       coordinate: coordinate,
     });
+    logActionMutation.mutate({ gameId, coordinate, action: "flag" });
   }
 
   function handleMouseEnter(event: React.MouseEvent<HTMLDivElement>) {
@@ -267,9 +268,9 @@ function Cell(props: CellProps) {
       return;
     }
     let coordinate: any = event.currentTarget.dataset["coordinate"];
-    logActionMutation.mutate({ gameId, coordinate });
 
     if (isRevealed && revealableNeigbors.length) {
+      logActionMutation.mutate({ gameId, coordinate, action: "reveal-adj" });
       if (flaggedNeighbors.length === value) {
         revealAdjTilesMutation.mutate({
           gameId: gameId,
@@ -292,6 +293,7 @@ function Cell(props: CellProps) {
     }
 
     if (!isRevealed) {
+      logActionMutation.mutate({ gameId, coordinate, action: "reveal" });
       revealTileMutation.mutate({
         gameId: gameId,
         coordinate: coordinate,
