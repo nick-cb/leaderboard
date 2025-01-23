@@ -1,6 +1,7 @@
 "use client";
 
 import { Cell } from "@/components/cell";
+import { ProgressSlider } from "@/components/progress-slider";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -21,6 +22,18 @@ export default function Game() {
     refetchOnReconnect: false,
   });
   const board = useBoard({ initialState: data?.board ?? [] });
+
+  const { data: actionLog } = useQuery({
+    queryKey: ["action-logs", gameId],
+    queryFn: async () => {
+      const url = new URL(`http://localhost:8000/game/${gameId}/action-logs`);
+      const response = await fetch(url, { credentials: "include" });
+      const data = await response.json();
+      return data;
+    },
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     event.preventDefault();
@@ -55,6 +68,7 @@ export default function Game() {
               </div>
             );
           })}
+          <ProgressSlider duration={actionLog?.duration ?? 0} logs={actionLog?.logs ?? []} />
         </BoardProvider>
       </div>
     </div>

@@ -6,7 +6,7 @@ const { Server, cookies } = require("./server.js");
 const server = new Server();
 
 server.use(/.*/, body());
-server.use(/.*/, cors({ "Access-Control-Allow-Origin": "http://localhost:5173" }));
+server.use(/.*/, cors({ "Access-Control-Allow-Origin": "http://localhost:3000" }));
 server.use(/.*/, url());
 
 server.get("/game/new", async (req, res) => {
@@ -42,10 +42,11 @@ server.get(/\/game\/\d+\/reveal-tile/, async (req, res) => {
   }
   coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
   const id = url.pathname.split("/")[2];
-  const game = await gameController.revealTile(parseInt(id), parseInt(userId), {
+  const [game, tiles] = await gameController.revealTile(parseInt(id), parseInt(userId), {
     x: coordinate[0],
     y: coordinate[1],
   });
+  console.log(tiles);
 
   return res.json({
     id: id,
@@ -158,7 +159,7 @@ server.post("/login", async (req, res) => {
       password: body.get("password"),
     });
     res.statusCode = 302;
-    res.setHeader("Location", "http://localhost:5173/");
+    res.setHeader("Location", "http://localhost:3000/");
     res.setHeader("Set-Cookie", [`userId=${payload.userId}`, `test=test`]);
     res.end("success");
   } catch (error) {
@@ -189,14 +190,14 @@ server.post(/\/game\/\d+\/log-action/, async (req, res) => {
   try {
     const body = req.body;
     const action = body.action; // mouseup
-    const coordinate = body.coordinate.split(",");
+    const coordinate = body.coordinate;
     const timestamp = body.timestamp;
     const id = req.parsedUrl.pathname.split("/")[2];
     const userId = cookies().get("userId");
 
     await gameController.logUserAction(parseInt(id), userId, {
-      x: coordinate[0],
-      y: coordinate[1],
+      x: coordinate.x,
+      y: coordinate.y,
       action,
       timestamp,
     });

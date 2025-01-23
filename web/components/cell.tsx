@@ -31,6 +31,7 @@ export function Cell(props: CellProps) {
   const revealAdjTilesMutation = useMutation({
     mutationKey: ["reveal-adj-tile"],
     mutationFn: async ({ gameId, coordinate }: any) => {
+      console.log({gameId, coordinate});
       if (!coordinate) {
         throw new Error("Invalid params");
       }
@@ -88,12 +89,17 @@ export function Cell(props: CellProps) {
     if (isRevealed) return;
     event.preventDefault();
 
-    const coordinate = event.currentTarget.dataset["coordinate"];
+    const coordinate = getTargetCoordinate(event.currentTarget);
+    if (!coordinate) return;
     flagTileMutation.mutate({
       gameId: gameId,
-      coordinate: coordinate,
+      coordinate: `${coordinate.x},${coordinate.y}`,
     });
-    logActionMutation.mutate({ gameId, coordinate, action: "flag" });
+    logActionMutation.mutate({
+      gameId,
+      coordinate: coordinate,
+      action: "flag",
+    });
   }
 
   function handleMouseEnter(event: React.MouseEvent<HTMLDivElement>) {
@@ -143,7 +149,9 @@ export function Cell(props: CellProps) {
       if (flaggedNeighbors.length !== value) {
         return board.toggleUnrevealedNeighborsPressVisual(coordinate);
       }
+      console.log("A");
 
+      logActionMutation.mutate({ gameId, coordinate, action: "reveal-adj" });
       revealAdjTilesMutation.mutate({
         gameId: gameId,
         coordinate: `${coordinate.x},${coordinate.y}`,

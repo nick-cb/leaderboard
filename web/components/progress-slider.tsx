@@ -1,24 +1,23 @@
-'use client';
+"use client";
 
 import { Play } from "lucide-react";
 import { useCallback, useState } from "react";
 
 type ProgressSliderProps = {
   duration: number;
+  logs: { x: number; y: number; action: "flag" | "reveal" }[];
 };
 export function ProgressSlider(props: ProgressSliderProps) {
-  const { duration = 0 } = props;
+  const { duration = 0, logs } = props;
   const [value, setValue] = useState(0);
   const [length, setLenght] = useState(0);
 
+  function replay() {}
+
   return (
     <div className={"flex items-center gap-2 p-2"}>
-      <button
-        className={
-          "play-progress-btn w-7 h-7 flex justify-center items-center relative"
-        }
-      >
-        <Play className={"w-4 h-4"} color={"#AFB8BF"} fill={"#AFB8BF"} />
+      <button className={"play-progress-btn w-7 h-7 flex justify-center items-center relative"}>
+        <Play onClick={replay} className={"w-4 h-4"} color={"#AFB8BF"} fill={"#AFB8BF"} />
       </button>
       <div className={"relative w-full"}>
         <input
@@ -26,9 +25,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
           min={0}
           max={duration}
           step={1 / 1000}
-          onInput={(event) =>
-            setValue(Math.floor(event.currentTarget.valueAsNumber))
-          }
+          onInput={(event) => setValue(Math.floor(event.currentTarget.valueAsNumber))}
           ref={useCallback((current: HTMLInputElement) => {
             setLenght(current?.clientWidth ?? 0);
           }, [])}

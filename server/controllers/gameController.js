@@ -129,7 +129,7 @@ async function revealTile(gameId, userId, { x, y }) {
     }
   }
 
-  return minesweeper;
+  return [minesweeper, tiles];
 }
 
 async function revealAdjTiles(gameId, userId, { x, y }) {
