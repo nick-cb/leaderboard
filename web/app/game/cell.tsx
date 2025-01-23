@@ -1,5 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
+import { useRef } from "react";
 import { queryClient } from "~/root";
+import { useCell } from "~/routes/game";
 
 type CellProps = {
   value: string | number;
@@ -10,14 +12,15 @@ type CellProps = {
   onReveal: () => void;
 };
 export function Cell(props: CellProps) {
+  const { value, coordinate, gameId, revealableNeigbors, flaggedNeighbors, onReveal } = props;
+  const ref = useRef<HTMLDivElement>(null);
   const {
-    value,
-    coordinate,
-    gameId,
-    revealableNeigbors,
-    flaggedNeighbors,
-    onReveal,
-  } = props;
+    registerElement,
+    togglePressVisual,
+    toggleUnrevealedNeighborsPressVisual,
+    getRevealableNeighbors,
+    getFlaggedNeighbors,
+  } = useCell({ cellRef: ref });
   const isRevealed = typeof value !== "string";
   const revealTileMutation = useMutation({
     mutationKey: ["reveal-tile"],
@@ -41,9 +44,7 @@ export function Cell(props: CellProps) {
       if (!coordinate) {
         throw new Error("Invalid params");
       }
-      const url = new URL(
-        `http://localhost:8000/game/${gameId}/reveal-adj-tiles`
-      );
+      const url = new URL(`http://localhost:8000/game/${gameId}/reveal-adj-tiles`);
       url.searchParams.set("coordinate", coordinate);
       const response = await fetch(url, { credentials: "include" });
       const data = await response.json();
@@ -122,19 +123,10 @@ export function Cell(props: CellProps) {
       return;
     }
     if (isRevealed && event.button === 0) {
-      let coordinate: any = event.currentTarget.dataset["coordinate"];
-      coordinate = coordinate?.split(",");
-      coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
-      for (const { x, y } of revealableNeigbors) {
-        const node = document.querySelector(`[data-coordinate="${x},${y}"]`);
-        if (node instanceof HTMLDivElement) {
-          node.classList.add("revealed");
-        }
-      }
-      return;
+      return toggleUnrevealedNeighborsPressVisual();
     }
     if (event.buttons === 1) {
-      event?.currentTarget.classList.add("revealed");
+      return togglePressVisual();
     }
   }
 
@@ -142,44 +134,32 @@ export function Cell(props: CellProps) {
     if (event.button === 2 || value === "+") {
       return;
     }
-    let coordinate: any = event.currentTarget.dataset["coordinate"];
 
-    if (isRevealed && revealableNeigbors.length) {
-      logActionMutation.mutate({ gameId, coordinate, action: "reveal-adj" });
+    let coordinate: any = event.currentTarget.dataset["coordinate"];
+    if (isRevealed) {
+      const flaggedNeighbors = getFlaggedNeighbors();
       if (flaggedNeighbors.length === value) {
         revealAdjTilesMutation.mutate({
           gameId: gameId,
           coordinate: coordinate,
         });
-        for (const { x, y } of revealableNeigbors) {
-          onReveal();
-        }
       } else {
-        coordinate = coordinate?.split(",");
-        coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
-        for (const { x, y } of revealableNeigbors) {
-          const node = document.querySelector(`[data-coordinate="${x},${y}"]`);
-          if (node instanceof HTMLDivElement) {
-            node.classList.remove("revealed");
-          }
-        }
+        toggleUnrevealedNeighborsPressVisual();
       }
-      return;
-    }
-
-    if (!isRevealed) {
+    } else {
       logActionMutation.mutate({ gameId, coordinate, action: "reveal" });
       revealTileMutation.mutate({
         gameId: gameId,
         coordinate: coordinate,
       });
-      onReveal();
     }
   }
 
   return (
     <div
+      ref={registerElement}
       data-coordinate={`${coordinate[0]},${coordinate[1]}`}
+      data-press={typeof value === 'number'}
       onContextMenu={handleContextMenu}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -210,15 +190,7 @@ export function Cell(props: CellProps) {
             : "",
       }}
     >
-      {value === "+"
-        ? "🚩"
-        : value === 0
-        ? ""
-        : value === 9
-        ? "💣"
-        : value === "-"
-        ? ""
-        : value}
+      {value === "+" ? "🚩" : value === 0 ? "" : value === 9 ? "💣" : value === "-" ? "" : value}
     </div>
   );
 }

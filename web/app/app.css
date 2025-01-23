@@ -45,16 +45,16 @@ html {
   transform: rotate(-90deg);
 }
 
-.cell.revealed {
+.cell[data-press="true"] {
   background: transparent;
   box-shadow: unset;
   border: 0.5px solid #232a32;
 }
 
-.cell.revealed::before {
+.cell[data-press="true"]::before {
   opacity: 0;
 }
-.cell.revealed::after {
+.cell[data-press="true"]::after {
   opacity: 0;
 }
 
@@ -213,8 +213,7 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("../fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.woff2")
-      format("woff2"),
+  src: url("../fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.woff2") format("woff2"),
     url("../fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.woff") format("woff"),
     url("../fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.ttf") format("truetype");
   font-weight: bold;
@@ -241,11 +240,9 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("../fonts/DSEG7-Classic/DSEG7Classic-LightItalic.woff2")
-      format("woff2"),
+  src: url("../fonts/DSEG7-Classic/DSEG7Classic-LightItalic.woff2") format("woff2"),
     url("../fonts/DSEG7-Classic/DSEG7Classic-LightItalic.woff") format("woff"),
-    url("../fonts/DSEG7-Classic/DSEG7Classic-LightItalic.ttf")
-      format("truetype");
+    url("../fonts/DSEG7-Classic/DSEG7Classic-LightItalic.ttf") format("truetype");
   font-weight: 200;
   font-style: italic;
 }
