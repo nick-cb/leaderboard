@@ -80,12 +80,18 @@ export function Cell(props: CellProps) {
     },
   });
 
+  /* Interaction specs:
+    - buttons = 0 => no buttons is being pressed
+    - buttons = 1 => left mouse is being pressed
+    - buttons = 2 => right mouse is being pressed
+    - Mouse down
+      - If buttons = 1 && revealed = false
+  */
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement>) {
-    if (isRevealed) {
-      return;
-    }
-    const coordinate = event.currentTarget.dataset["coordinate"];
+    if (isRevealed) return;
     event.preventDefault();
+
+    const coordinate = event.currentTarget.dataset["coordinate"];
     flagTileMutation.mutate({
       gameId: gameId,
       coordinate: coordinate,
@@ -94,19 +100,21 @@ export function Cell(props: CellProps) {
   }
 
   function handleMouseEnter(event: React.MouseEvent<HTMLDivElement>) {
-    if (isRevealed || value === "+") {
+    if (isRevealed || value === "+" || !isLeftClick(event)) {
       return;
     }
-    if (event.buttons === 1) {
-      event.currentTarget.classList.add("revealed");
-    }
+    const coordinate = getTargetCoordinate(event.currentTarget);
+    if (!coordinate) return;
+    board.togglePressVisual(coordinate);
   }
 
   function handleMouseLeave(event: React.MouseEvent<HTMLDivElement>) {
-    if (isRevealed) {
+    if (isRevealed || !isLeftClick(event)) {
       return;
     }
-    event.currentTarget.classList.remove("revealed");
+    const coordinate = getTargetCoordinate(event.currentTarget);
+    if (!coordinate) return;
+    board.togglePressVisual(coordinate);
   }
 
   function handleMouseDown(event: React.MouseEvent<HTMLDivElement>) {
@@ -116,16 +124,18 @@ export function Cell(props: CellProps) {
     const coordinate = getTargetCoordinate(event.currentTarget);
     if (!coordinate) return;
 
-    if (isRevealed && event.button === 0) {
+    if (isRevealed && isLeftClick(event)) {
       return board.toggleUnrevealedNeighborsPressVisual(coordinate);
     }
-    if (event.buttons === 1) {
+    if (isLeftClick(event)) {
       return board.togglePressVisual(coordinate);
     }
   }
 
   function handleMouseUp(event: React.MouseEvent<HTMLDivElement>) {
-    if (event.button === 2 || value === "+") {
+    // We will handle flag action in contextmenu event so we don't have to do
+    // it in here
+    if (isRightClick(event) || value === "+") {
       return;
     }
 
@@ -133,15 +143,18 @@ export function Cell(props: CellProps) {
     if (!coordinate) return;
     if (isRevealed) {
       const flaggedNeighbors = board.getFlaggedNeighbors(coordinate);
-      if (flaggedNeighbors.length === value) {
-        revealAdjTilesMutation.mutate({
-          gameId: gameId,
-          coordinate: `${coordinate.x},${coordinate.y}`,
-        });
-      } else {
-        board.toggleUnrevealedNeighborsPressVisual(coordinate);
+      if (flaggedNeighbors.length !== value) {
+        return board.toggleUnrevealedNeighborsPressVisual(coordinate);
       }
+
+      revealAdjTilesMutation.mutate({
+        gameId: gameId,
+        coordinate: `${coordinate.x},${coordinate.y}`,
+      });
     } else {
+      // We don't call togglePressVisual for this tile because it can result in
+      // a ui glitch on this tile. The board re-render will cause the tile to stay
+      // in the pressed state.
       logActionMutation.mutate({ gameId, coordinate, action: "reveal" });
       revealTileMutation.mutate({
         gameId: gameId,
@@ -155,6 +168,14 @@ export function Cell(props: CellProps) {
     if (!coordinate) return null;
     const [x, y] = coordinate.split(",");
     return { x: parseInt(x), y: parseInt(y) };
+  }
+
+  function isLeftClick(event: React.MouseEvent<HTMLDivElement>) {
+    return event.buttons === 1;
+  }
+
+  function isRightClick(event: React.MouseEvent<HTMLDivElement>) {
+    return event.buttons === 2;
   }
 
   return (
