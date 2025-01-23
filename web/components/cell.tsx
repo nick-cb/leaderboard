@@ -15,14 +15,13 @@ type CellProps = {
 };
 export function Cell(props: CellProps) {
   const { value, coordinate, gameId, revealableNeigbors, flaggedNeighbors, onReveal } = props;
-  const ref = useRef<HTMLDivElement>(null);
   const {
-    registerElement,
+    cellRef,
     togglePressVisual,
     toggleUnrevealedNeighborsPressVisual,
     getRevealableNeighbors,
     getFlaggedNeighbors,
-  } = useCell({ cellRef: ref });
+  } = useCell();
   const isRevealed = typeof value !== "string";
   const revealTileMutation = useMutation({
     mutationKey: ["reveal-tile"],
@@ -159,7 +158,7 @@ export function Cell(props: CellProps) {
 
   return (
     <div
-      ref={registerElement}
+      ref={cellRef}
       data-coordinate={`${coordinate[0]},${coordinate[1]}`}
       data-press={typeof value === 'number'}
       onContextMenu={handleContextMenu}

@@ -14,12 +14,12 @@ const boardContext = createContext<BoardContextProps>({ board: [], registerEleme
 type UseCellProps = {
   cellRef: React.RefObject<HTMLDivElement | null>;
 };
-export function useCell(props: UseCellProps) {
-  const { cellRef } = props;
+export function useCell() {
+  const ref = useRef<HTMLDivElement>(null);
   const { board, registerElement } = useContext(boardContext);
 
   function togglePressVisual() {
-    const target = cellRef.current;
+    const target = ref.current;
     if (!target) return;
 
     const pressState = target.dataset["press"];
@@ -41,7 +41,7 @@ export function useCell(props: UseCellProps) {
   }
 
   function getFlaggedNeighbors() {
-    const target = cellRef.current;
+    const target = ref.current;
     let coordinate = target?.dataset["coordinate"];
     if (!coordinate) return [];
 
@@ -52,7 +52,7 @@ export function useCell(props: UseCellProps) {
   }
 
   function getRevealableNeighbors() {
-    const target = cellRef.current;
+    const target = ref.current;
     let coordinate = target?.dataset["coordinate"];
     if (!coordinate) return [];
 
@@ -75,7 +75,16 @@ export function useCell(props: UseCellProps) {
   }
 
   return {
-    registerElement,
+    cellRef: useCallback(
+      (current: HTMLDivElement) => {
+        ref.current = current;
+        registerElement(current);
+        return () => {
+          ref.current = null;
+        };
+      },
+      [registerElement],
+    ),
     togglePressVisual,
     toggleUnrevealedNeighborsPressVisual,
     getRevealableNeighbors,
@@ -154,6 +163,7 @@ function BoardProvider(props: React.PropsWithChildren<BoardProviderProps>) {
   const registerElement = useCallback((current: HTMLDivElement) => {
     cellSet.current.add(current);
     return () => {
+      console.log("un registerElement");
       cellSet.current.delete(current);
     };
   }, []);
