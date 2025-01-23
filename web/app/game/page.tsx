@@ -5,26 +5,32 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 
-type BoardContextProps = {
-  board: Array<(string | number)[]>;
-  registerElement: (current: HTMLDivElement) => void;
-};
-const boardContext = createContext<BoardContextProps>({ board: [], registerElement: () => {} });
+const boardContext = createContext<ReturnType<typeof useBoard>>({
+  state: [],
+  registerElement: () => {
+    return () => {};
+  },
+  togglePressVisual: () => {},
+  toggleUnrevealedNeighborsPressVisual: () => {},
+  getFlaggedNeighbors: () => [],
+});
 
 type UseCellProps = {
   cellRef: React.RefObject<HTMLDivElement | null>;
 };
 export function useCell() {
   const ref = useRef<HTMLDivElement>(null);
-  const { board, registerElement } = useContext(boardContext);
+  const board = useContext(boardContext);
+  const { state } = board;
 
   function togglePressVisual() {
     const target = ref.current;
     if (!target) return;
+    let coordinate = target.dataset["coordinate"];
+    if (!coordinate) return;
 
-    const pressState = target.dataset["press"];
-    if (pressState === "false") target.dataset["press"] = "true";
-    if (pressState === "true") target.dataset["press"] = "false";
+    const [x, y] = coordinate?.split(",");
+    board.togglePressVisual({ x: parseInt(x), y: parseInt(y) });
   }
 
   function getNeighbors({ x, y }: { x: number; y: number }) {
@@ -47,7 +53,7 @@ export function useCell() {
 
     const [x, y] = coordinate.split(",");
     return getNeighbors({ x: parseInt(x), y: parseInt(y) }).filter((n) => {
-      return board[n.y]?.[n.x] && board[n.y][n.x] === "+";
+      return state[n.y]?.[n.x] && state[n.y][n.x] === "+";
     });
   }
 
@@ -58,7 +64,7 @@ export function useCell() {
 
     const [x, y] = coordinate.split(",");
     return getNeighbors({ x: parseInt(x), y: parseInt(y) }).filter((n) => {
-      return board[n.y]?.[n.x] && board[n.y][n.x] === "-";
+      return state[n.y]?.[n.x] && state[n.y][n.x] === "-";
     });
   }
 
@@ -78,13 +84,15 @@ export function useCell() {
     cellRef: useCallback(
       (current: HTMLDivElement) => {
         ref.current = current;
-        registerElement(current);
+        board.registerElement(current);
         return () => {
+          console.log("unregister");
           ref.current = null;
         };
       },
-      [registerElement],
+      [board.registerElement],
     ),
+    board,
     togglePressVisual,
     toggleUnrevealedNeighborsPressVisual,
     getRevealableNeighbors,
@@ -107,7 +115,7 @@ export default function Game() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-  const board: any[] = data?.board ?? [];
+  const board = useBoard({ state: data?.board ?? [] });
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     event.preventDefault();
@@ -121,25 +129,16 @@ export default function Game() {
     <div className="panel bg-[#474E56] w-max" onContextMenu={handleContextMenu}>
       <div className={"flex board w-max relative flex-col"}>
         <BoardProvider board={board}>
-          {board.map((row: Array<number | string>, y) => {
+          {board.state.map((row: Array<number | string>, y) => {
             return (
               <div key={y} className={"flex"}>
                 {row.map((col, x) => {
-                  // const revealableNeigbors = getRevealableNeighbors({ y, x });
-                  // const flaggedNeighbors = getFlaggedNeighbors({ y, x });
                   return (
                     <Cell
                       key={x}
                       value={col}
                       coordinate={[x, y]}
-                      gameId={gameId}
-                      revealableNeigbors={[]}
-                      flaggedNeighbors={[]}
-                      onReveal={() => {
-                        // if (!runClock) {
-                        //   setRunClock(true);
-                        // }
-                      }}
+                      gameId={parseInt(gameId ?? "-1")}
                     />
                   );
                 })}
@@ -153,11 +152,19 @@ export default function Game() {
 }
 
 type BoardProviderProps = {
-  board: BoardContextProps["board"];
+  board: ReturnType<typeof useBoard>;
 };
 function BoardProvider(props: React.PropsWithChildren<BoardProviderProps>) {
   const { children, board } = props;
 
+  return <boardContext.Provider value={board}>{children}</boardContext.Provider>;
+}
+
+type UseBoardProviderProps = {
+  state: Array<(string | number)[]>;
+};
+function useBoard(props: UseBoardProviderProps) {
+  const { state } = props;
   const cellSet = useRef<Set<HTMLDivElement>>(new Set());
 
   const registerElement = useCallback((current: HTMLDivElement) => {
@@ -168,7 +175,85 @@ function BoardProvider(props: React.PropsWithChildren<BoardProviderProps>) {
     };
   }, []);
 
-  return (
-    <boardContext.Provider value={{ board, registerElement }}>{children}</boardContext.Provider>
-  );
+  function isThisCell(cell: HTMLDivElement, { x, y }: { x: number; y: number }) {
+    let coordinate = cell.dataset["coordinate"];
+    if (!coordinate) return false;
+
+    const [cX, cY] = coordinate.split(",");
+
+    return parseInt(cX) === x && parseInt(cY) === y;
+  }
+
+  function togglePressVisual({ x, y }: { x: number; y: number }) {
+    for (const cell of cellSet.current) {
+      if (!cell || !isThisCell(cell, { x, y })) continue;
+
+      const pressState = cell.dataset["press"];
+      if (pressState === "false") cell.dataset["press"] = "true";
+      if (pressState === "true") cell.dataset["press"] = "false";
+    }
+  }
+
+  function getNeighbors({ x, y }: { x: number; y: number }) {
+    return [
+      { y: y - 1, x: x - 1 },
+      { y: y - 1, x: x },
+      { y: y - 1, x: x + 1 },
+      { y: y, x: x - 1 },
+      { y: y, x: x + 1 },
+      { y: y + 1, x: x - 1 },
+      { y: y + 1, x: x },
+      { y: y + 1, x: x + 1 },
+    ].filter(({ x, y }) => x > -1 && y > -1 && x < 16 && y < 16);
+  }
+
+  function getFlaggedNeighbors(c: { x: number; y: number }) {
+    for (const cell of cellSet.current) {
+      if (!cell && !isThisCell(cell, c)) return [];
+
+      let coordinate = cell.dataset["coordinate"];
+      if (!coordinate) return [];
+
+      const { x, y } = c;
+      return getNeighbors({ x: x, y: y }).filter((n) => {
+        return state[n.y]?.[n.x] && state[n.y][n.x] === "+";
+      });
+    }
+    return [];
+  }
+
+  function getRevealableNeighbors(c: { x: number; y: number }) {
+    for (const cell of cellSet.current) {
+      if (!cell && !isThisCell(cell, c)) return [];
+
+      const { x, y } = c;
+      return getNeighbors({ x: x, y: y }).filter((n) => {
+        return state[n.y]?.[n.x] && state[n.y][n.x] === "-";
+      });
+    }
+
+    return [];
+  }
+
+  function toggleUnrevealedNeighborsPressVisual(c: { x: number; y: number }) {
+    console.log(c);
+    for (const { x: nX, y: nY } of getRevealableNeighbors(c)) {
+      console.log({ nX, nY });
+      const node = document.querySelector(`[data-coordinate="${nX},${nY}"]`);
+      if (node instanceof HTMLDivElement) {
+        const pressState = node.dataset["press"];
+        console.log(pressState);
+        if (pressState === "false") node.dataset["press"] = "true";
+        if (pressState === "true") node.dataset["press"] = "false";
+      }
+    }
+  }
+
+  return {
+    state,
+    registerElement,
+    togglePressVisual,
+    toggleUnrevealedNeighborsPressVisual,
+    getFlaggedNeighbors,
+  };
 }

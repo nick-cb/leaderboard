@@ -1,27 +1,17 @@
-'use client';
+"use client";
 
 import { useCell } from "@/app/game/page";
 import { useMutation } from "@tanstack/react-query";
-import { useRef } from "react";
 import { queryClient } from "./providers";
 
 type CellProps = {
   value: string | number;
   coordinate: [number, number];
   gameId: number;
-  revealableNeigbors: { x: number; y: number }[];
-  flaggedNeighbors: { x: number; y: number }[];
-  onReveal: () => void;
 };
 export function Cell(props: CellProps) {
-  const { value, coordinate, gameId, revealableNeigbors, flaggedNeighbors, onReveal } = props;
-  const {
-    cellRef,
-    togglePressVisual,
-    toggleUnrevealedNeighborsPressVisual,
-    getRevealableNeighbors,
-    getFlaggedNeighbors,
-  } = useCell();
+  const { value, coordinate, gameId } = props;
+  const { board, cellRef } = useCell();
   const isRevealed = typeof value !== "string";
   const revealTileMutation = useMutation({
     mutationKey: ["reveal-tile"],
@@ -36,7 +26,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game", gameId], data);
+      queryClient.setQueryData(["download-game", gameId.toString()], data);
     },
   });
   const revealAdjTilesMutation = useMutation({
@@ -52,7 +42,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game", gameId], data);
+      queryClient.setQueryData(["download-game", gameId.toString()], data);
     },
   });
   const flagTileMutation = useMutation({
@@ -68,7 +58,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game", gameId], data);
+      queryClient.setQueryData(["download-game", gameId.toString()], data);
     },
   });
   const logActionMutation = useMutation({
@@ -123,11 +113,14 @@ export function Cell(props: CellProps) {
     if (value === "+") {
       return;
     }
+    const coordinate = getTargetCoordinate(event.currentTarget);
+    if (!coordinate) return;
+
     if (isRevealed && event.button === 0) {
-      return toggleUnrevealedNeighborsPressVisual();
+      return board.toggleUnrevealedNeighborsPressVisual(coordinate);
     }
     if (event.buttons === 1) {
-      return togglePressVisual();
+      return board.togglePressVisual(coordinate);
     }
   }
 
@@ -136,31 +129,39 @@ export function Cell(props: CellProps) {
       return;
     }
 
-    let coordinate: any = event.currentTarget.dataset["coordinate"];
+    const coordinate = getTargetCoordinate(event.currentTarget);
+    if (!coordinate) return;
     if (isRevealed) {
-      const flaggedNeighbors = getFlaggedNeighbors();
+      const flaggedNeighbors = board.getFlaggedNeighbors(coordinate);
       if (flaggedNeighbors.length === value) {
         revealAdjTilesMutation.mutate({
           gameId: gameId,
-          coordinate: coordinate,
+          coordinate: `${coordinate.x},${coordinate.y}`,
         });
       } else {
-        toggleUnrevealedNeighborsPressVisual();
+        board.toggleUnrevealedNeighborsPressVisual(coordinate);
       }
     } else {
       logActionMutation.mutate({ gameId, coordinate, action: "reveal" });
       revealTileMutation.mutate({
         gameId: gameId,
-        coordinate: coordinate,
+        coordinate: `${coordinate.x},${coordinate.y}`,
       });
     }
+  }
+
+  function getTargetCoordinate(target: HTMLDivElement) {
+    const coordinate = target.dataset["coordinate"];
+    if (!coordinate) return null;
+    const [x, y] = coordinate.split(",");
+    return { x: parseInt(x), y: parseInt(y) };
   }
 
   return (
     <div
       ref={cellRef}
       data-coordinate={`${coordinate[0]},${coordinate[1]}`}
-      data-press={typeof value === 'number'}
+      data-press={typeof value === "number"}
       onContextMenu={handleContextMenu}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -172,26 +173,26 @@ export function Cell(props: CellProps) {
       }
       style={{
         color:
-          value === 1
-            ? "#7CC7FF"
-            : value === 2
-            ? "#66C266"
-            : value === 3
-            ? "#F78"
-            : value === 4
-            ? "#EE88FE"
-            : value === 5
-            ? "#DA2"
-            : value === 6
-            ? "#6CC"
-            : value === 7
-            ? "#999"
-            : value === 8
-            ? "#CFD8E0"
-            : "",
+          value === 1 ? "#7CC7FF"
+          : value === 2 ? "#66C266"
+          : value === 3 ? "#F78"
+          : value === 4 ? "#EE88FE"
+          : value === 5 ? "#DA2"
+          : value === 6 ? "#6CC"
+          : value === 7 ? "#999"
+          : value === 8 ? "#CFD8E0"
+          : "",
       }}
     >
-      {value === "+" ? "🚩" : value === 0 ? "" : value === 9 ? "💣" : value === "-" ? "" : value}
+      {value === "+" ?
+        "🚩"
+      : value === 0 ?
+        ""
+      : value === 9 ?
+        "💣"
+      : value === "-" ?
+        ""
+      : value}
     </div>
   );
 }
