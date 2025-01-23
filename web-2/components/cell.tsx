@@ -1,7 +1,9 @@
+'use client';
+
+import { useCell } from "@/app/game/page";
 import { useMutation } from "@tanstack/react-query";
 import { useRef } from "react";
-import { queryClient } from "~/root";
-import { useCell } from "~/routes/game";
+import { queryClient } from "./providers";
 
 type CellProps = {
   value: string | number;
@@ -75,7 +77,7 @@ export function Cell(props: CellProps) {
     mutationFn: async ({ gameId, coordinate, action }: any) => {
       const headers = new Headers();
       headers.set("Content-Type", "application/json");
-      headers.set("origin", "http://localhost:3000");
+      headers.set("origin", "http://localhost:5173");
       await fetch(`http://localhost:8000/game/${gameId}/log-action`, {
         method: "POST",
         credentials: "include",
