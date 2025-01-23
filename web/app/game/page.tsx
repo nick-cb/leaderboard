@@ -3,7 +3,7 @@
 import { Cell } from "@/components/cell";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { createContext, useCallback, useContext, useRef } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 export default function Game() {
   const searchParams = useSearchParams();
@@ -20,11 +20,16 @@ export default function Game() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-  const board = useBoard({ state: data?.board ?? [] });
+  const board = useBoard({ initialState: data?.board ?? [] });
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     event.preventDefault();
   }
+
+  useEffect(() => {
+    if (!data) return;
+    board.updateState(data.board);
+  }, [data]);
 
   if (!data) {
     return <div>There is no game here</div>;
@@ -32,7 +37,7 @@ export default function Game() {
 
   return (
     <div className="panel bg-[#474E56] w-max" onContextMenu={handleContextMenu}>
-      <div className={"flex board w-max relative flex-col"}>
+      <div className={"flex board w-max relative flex-col pointer-events-none"}>
         <BoardProvider board={board}>
           {board.state.map((row: Array<number | string>, y) => {
             return (
@@ -64,6 +69,7 @@ const boardContext = createContext<ReturnType<typeof useBoard>>({
   togglePressVisual: () => {},
   toggleUnrevealedNeighborsPressVisual: () => {},
   getFlaggedNeighbors: () => [],
+  updateState: () => {},
 });
 
 export function useCell() {
@@ -96,11 +102,12 @@ function BoardProvider(props: React.PropsWithChildren<BoardProviderProps>) {
 }
 
 type UseBoardProviderProps = {
-  state: Array<(string | number)[]>;
+  initialState: Array<(string | number)[]>;
 };
 function useBoard(props: UseBoardProviderProps) {
-  const { state } = props;
+  const { initialState } = props;
   const cellSet = useRef<Set<HTMLDivElement>>(new Set());
+  const [state, setState] = useState(initialState);
 
   const registerElement = useCallback((current: HTMLDivElement) => {
     cellSet.current.add(current);
@@ -184,8 +191,13 @@ function useBoard(props: UseBoardProviderProps) {
     }
   }
 
+  function updateState(newState: (string | number)[][]) {
+    setState(newState);
+  }
+
   return {
     state,
+    updateState,
     registerElement,
     togglePressVisual,
     toggleUnrevealedNeighborsPressVisual,

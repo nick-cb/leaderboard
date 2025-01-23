@@ -2,7 +2,6 @@
 
 import { useCell } from "@/app/game/page";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "./providers";
 
 type CellProps = {
   value: string | number;
@@ -26,7 +25,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game", gameId.toString()], data);
+      board.updateState(data.board);
     },
   });
   const revealAdjTilesMutation = useMutation({
@@ -42,7 +41,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game", gameId.toString()], data);
+      board.updateState(data.board);
     },
   });
   const flagTileMutation = useMutation({
@@ -58,7 +57,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["download-game", gameId.toString()], data);
+      board.updateState(data.board);
     },
   });
   const logActionMutation = useMutation({
@@ -83,9 +82,7 @@ export function Cell(props: CellProps) {
   /* Interaction specs:
     - buttons = 0 => no buttons is being pressed
     - buttons = 1 => left mouse is being pressed
-    - buttons = 2 => right mouse is being pressed
-    - Mouse down
-      - If buttons = 1 && revealed = false
+    - button = 2 => right mouse is being pressed
   */
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement>) {
     if (isRevealed) return;
@@ -175,7 +172,7 @@ export function Cell(props: CellProps) {
   }
 
   function isRightClick(event: React.MouseEvent<HTMLDivElement>) {
-    return event.buttons === 2;
+    return event.button === 2;
   }
 
   return (
@@ -189,7 +186,7 @@ export function Cell(props: CellProps) {
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       className={
-        "cell w-8 h-8 text-center cursor-default bg-[#4D545C] select-none font-extrabold" +
+        "cell w-8 h-8 text-center cursor-default bg-[#4D545C] select-none font-extrabold pointer-events-auto" +
         (value !== "+" && value !== "-" ? " revealed " : "")
       }
       style={{
