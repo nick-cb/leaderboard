@@ -2,6 +2,7 @@
 
 import { Cell } from "@/components/cell";
 import { ProgressSlider } from "@/components/progress-slider";
+import { ReplayCursor } from "@/components/replay-cursor";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -22,6 +23,7 @@ export default function Game() {
     refetchOnReconnect: false,
   });
   const board = useBoard({ initialState: data?.board ?? [] });
+  const cursorRef = useRef<HTMLDivElement>(null);
 
   const { data: actionLog } = useQuery({
     queryKey: ["action-logs", gameId],
@@ -37,6 +39,15 @@ export default function Game() {
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     event.preventDefault();
+  }
+
+  function moveCursor({ x, y }: { x: number; y: number }) {
+    const cellElement = board.getElementWithCoordinate({ x, y });
+    if (!cellElement || !cursorRef.current) return;
+    const left = cellElement.offsetLeft;
+    const top = cellElement.offsetTop;
+    cursorRef.current.style.left = left + "px";
+    cursorRef.current.style.top = top + "px";
   }
 
   useEffect(() => {
@@ -72,7 +83,9 @@ export default function Game() {
             board={board}
             duration={actionLog?.duration ?? 0}
             logs={actionLog?.logs ?? []}
+            moveCursor={moveCursor}
           />
+          <div ref={cursorRef} className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all duration-200"} />
         </BoardProvider>
       </div>
     </div>
@@ -89,6 +102,7 @@ const boardContext = createContext<ReturnType<typeof useBoard>>({
   getFlaggedNeighbors: () => [],
   updateState: () => {},
   getRevealableNeighbors: () => [],
+  getElementWithCoordinate: () => null,
 });
 
 export function useCell() {
@@ -197,7 +211,6 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   function toggleUnrevealedNeighborsPressVisual(c: { x: number; y: number }) {
-    console.log(c);
     for (const { x: nX, y: nY } of getRevealableNeighbors(c)) {
       console.log({ nX, nY });
       const node = document.querySelector(`[data-coordinate="${nX},${nY}"]`);
@@ -214,6 +227,14 @@ function useBoard(props: UseBoardProviderProps) {
     setState(newState);
   }
 
+  function getElementWithCoordinate(c: { x: number; y: number }) {
+    for (const cell of cellSet.current) {
+      if (isThisCell(cell, c)) return cell;
+    }
+
+    return null;
+  }
+
   return {
     state,
     updateState,
@@ -221,7 +242,8 @@ function useBoard(props: UseBoardProviderProps) {
     togglePressVisual,
     toggleUnrevealedNeighborsPressVisual,
     getFlaggedNeighbors,
-    getRevealableNeighbors
+    getRevealableNeighbors,
+    getElementWithCoordinate,
   };
 }
 export type Board = ReturnType<typeof useBoard>;
