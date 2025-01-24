@@ -7,6 +7,7 @@ class Tile {
   /** @type {Array<{x:number,y:number}>} neighbors */
   neighbors = [];
   constrains = [0, 0];
+  timestamp = 0;
 
   constructor(args) {
     this.x = args.x;
@@ -60,8 +61,7 @@ class MineSweeper {
   revealedTileCount = 0;
   startTime = 0;
   endTime = 0;
-  /** @type {Array<Tile>} board */
-  trail = [];
+  /** @type {Array<{x: number, y: number, isRevealed: boolean; isFlagged: boolean; timestamp: number}>} board */
   static #empty = Symbol();
 
   constructor(rows, cols, mines, seeds) {
@@ -80,6 +80,7 @@ class MineSweeper {
 
   /** @param {Array<Array<number>> | {rows:number,cols:number,tiles:Array<number | Tile>}} board */
   static from(board) {
+    console.log(board);
     const mineSweeper = new MineSweeper(MineSweeper.#empty);
     if (!Array.isArray(board)) {
       mineSweeper.rows = board.rows;
@@ -194,7 +195,6 @@ class MineSweeper {
     this.leftClicks += 1;
     const revealedTiles = this.#revealTile({ x, y }, callback);
     this.revealedTileCount += revealedTiles.length;
-    this.trail.push(...revealedTiles);
     this.updateGameState(revealedTiles);
 
     return revealedTiles;
@@ -205,6 +205,7 @@ class MineSweeper {
     if (!tile.isRevealable()) return [];
 
     tile.isRevealed = true;
+    tile.timestamp = Date.now();
     const revealedTiles = [tile];
     callback?.(tile);
 
@@ -222,7 +223,7 @@ class MineSweeper {
 
   revealAdjTiles({ x, y }) {
     const tile = this.board[y][x];
-    if (!tile.isRevealed || tile.isFlagged) return;
+    if (!tile.isRevealed || tile.isFlagged) return [];
 
     const flaggedTiles = tile.neighbors.filter(({ x, y }) => {
       return this.board[y][x].isFlagged;
@@ -241,7 +242,7 @@ class MineSweeper {
       this.updateGameState(revealedTiles);
     }
     this.revealedTileCount += revealedTiles.length;
-    this.trail.push(...revealedTiles);
+    // this.trail.push(...revealedTiles);
     this.updateGameState(revealedTiles);
 
     return revealedTiles;
@@ -253,7 +254,8 @@ class MineSweeper {
     if (!tile.isFlagable()) return;
 
     tile.isFlagged = !tile.isFlagged;
-    this.trail.push(tile);
+    tile.timestamp = Date.now();
+    // this.trail.push(tile);
     return tile;
   }
 
