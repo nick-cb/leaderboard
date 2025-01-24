@@ -68,7 +68,11 @@ export default function Game() {
               </div>
             );
           })}
-          <ProgressSlider duration={actionLog?.duration ?? 0} logs={actionLog?.logs ?? []} />
+          <ProgressSlider
+            board={board}
+            duration={actionLog?.duration ?? 0}
+            logs={actionLog?.logs ?? []}
+          />
         </BoardProvider>
       </div>
     </div>
@@ -84,6 +88,7 @@ const boardContext = createContext<ReturnType<typeof useBoard>>({
   toggleUnrevealedNeighborsPressVisual: () => {},
   getFlaggedNeighbors: () => [],
   updateState: () => {},
+  getRevealableNeighbors: () => [],
 });
 
 export function useCell() {
@@ -216,5 +221,7 @@ function useBoard(props: UseBoardProviderProps) {
     togglePressVisual,
     toggleUnrevealedNeighborsPressVisual,
     getFlaggedNeighbors,
+    getRevealableNeighbors
   };
 }
+export type Board = ReturnType<typeof useBoard>;
