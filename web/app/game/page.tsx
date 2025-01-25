@@ -2,7 +2,6 @@
 
 import { Cell } from "@/components/cell";
 import { ProgressSlider } from "@/components/progress-slider";
-import { ReplayCursor } from "@/components/replay-cursor";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -24,18 +23,6 @@ export default function Game() {
   });
   const board = useBoard({ initialState: data?.board ?? [] });
   const cursorRef = useRef<HTMLDivElement>(null);
-
-  const { data: actionLog } = useQuery({
-    queryKey: ["action-logs", gameId],
-    queryFn: async () => {
-      const url = new URL(`http://localhost:8000/game/${gameId}/action-logs`);
-      const response = await fetch(url, { credentials: "include" });
-      const data = await response.json();
-      return data;
-    },
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     event.preventDefault();
@@ -80,9 +67,10 @@ export default function Game() {
             );
           })}
           <ProgressSlider
+            gameId={gameId}
             board={board}
-            duration={actionLog?.duration ?? 0}
-            logs={actionLog?.logs ?? []}
+            // duration={actionLog?.duration ?? 0}
+            // logs={actionLog?.logs ?? []}
             moveCursor={moveCursor}
           />
           <div ref={cursorRef} className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all duration-200"} />
@@ -212,11 +200,9 @@ function useBoard(props: UseBoardProviderProps) {
 
   function toggleUnrevealedNeighborsPressVisual(c: { x: number; y: number }) {
     for (const { x: nX, y: nY } of getRevealableNeighbors(c)) {
-      console.log({ nX, nY });
       const node = document.querySelector(`[data-coordinate="${nX},${nY}"]`);
       if (node instanceof HTMLDivElement) {
         const pressState = node.dataset["press"];
-        console.log(pressState);
         if (pressState === "false") node.dataset["press"] = "true";
         if (pressState === "true") node.dataset["press"] = "false";
       }
