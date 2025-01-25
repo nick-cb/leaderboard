@@ -2,16 +2,13 @@
 
 import { Board } from "@/app/game/page";
 import { Pause, Play } from "lucide-react";
-import { startTransition, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { startTransition, useCallback, useState } from "react";
 import { MineSweeper, Tile } from "minesweeper";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "./providers";
-import { flushSync } from "react-dom";
 
 let mineSweeper: MineSweeper | undefined;
 let lastStep = 0;
 let controller = new AbortController();
-let isReplaying = false;
 
 type ProgressSliderProps = {
   gameId: string | null;
@@ -37,8 +34,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
   const [stepIdx, setStepIdx] = useState(0);
   const [time, setTime] = useState(0);
   const [length, setLenght] = useState(0);
-  // const [isReplaying, setIsPrelaying] = useState(false);
-  const finalState = useRef(board.state);
+  const [isReplaying, setIsPrelaying] = useState(false);
 
   async function waitFor(ms: number) {
     return new Promise((resolve) => {
@@ -48,7 +44,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
     });
   }
 
-  async function playGame(mineSweeper: MineSweeper, actionLog: any) {
+  async function playGame(mineSweeper: MineSweeper, actionLog: any, signal: AbortSignal) {
     console.log("start game from step", lastStep);
     for (let i = lastStep; i < actionLog.logs.length; i++) {
       const step = actionLog.logs[i];
@@ -78,7 +74,8 @@ export function ProgressSlider(props: ProgressSliderProps) {
         mineSweeper.toggleFlagTile({ x: step.x, y: step.y });
       }
 
-      board.updateState(mineSweeper.getMaskedBoardAs2DArray(), { force: true });
+      board.updateState(mineSweeper.getMaskedBoardAs2DArray());
+      console.log(board.getState());
 
       const nextStep = actionLog.logs[i + 1];
       const nextTimestamp = nextStep ? new Date(nextStep.timestamp).getTime() : 0;
@@ -87,88 +84,70 @@ export function ProgressSlider(props: ProgressSliderProps) {
       console.log("wait for ", timeToNextStep / 1000 + "s", "before next step");
       lastStep = i + 1;
       await waitFor(timeToNextStep);
-      if (controller.signal.aborted) {
+      if (signal.aborted) {
         console.log("pause after step", i, step);
         return;
       }
     }
   }
 
-  function replay() {
-    board.updateState(
-      board.state.map((row) => row.map(() => "-")),
-      { force: true },
-    );
-    console.log(board);
-    // if (!isReplaying) {
-    //   isReplaying = true;
-    // } else {
-    //   isReplaying = false;
-    //   controller.abort();
-    //   return;
-    // }
-    // if (controller.signal.aborted) {
-    //   controller = new AbortController();
-    // }
-    // if (!mineSweeper) {
-    //   console.log("A");
-    //   finalState.current = board.state;
-    //   mineSweeper = MineSweeper.from({
-    //     rows: finalState.current.length,
-    //     cols: finalState.current.length,
-    //     tiles: finalState.current.flatMap((row, y) => {
-    //       return row.map((col, x) => {
-    //         return new Tile({ x, y, constant: col, constrains: [row.length, row.length] });
-    //       });
-    //     }),
-    //   });
-    //   const emptyBoard = finalState.current.map((row) => row.map(() => "-"));
-    //   board.updateState(emptyBoard, { force: true });
-    // }
+  async function replay() {
+    if (controller.signal.aborted) {
+      controller = new AbortController();
+    }
+    const signal = controller.signal;
 
-    // // if (!actionLog) {
-    // const { data } = await refetch();
-    // // setIsPrelaying(true);
-    // await playGame(mineSweeper, data);
-    // } else {
-    //   setIsPrelaying(true);
-    //   await playGame(mineSweeper, actionLog);
-    // }
+    if (!mineSweeper) {
+      const state = board.getState();
+      mineSweeper = MineSweeper.from({
+        rows: state.length,
+        cols: state.length,
+        tiles: state.flatMap((row, y) => {
+          return row.map((col, x) => {
+            return new Tile({ x, y, constant: col, constrains: [row.length, row.length] });
+          });
+        }),
+      });
+      const emptyBoard = state.map((row) => row.map(() => "-"));
+      board.updateState(emptyBoard, { force: true });
+    }
+
+    if (!actionLog) {
+      const { data } = await refetch();
+      setIsPrelaying(true);
+      startTransition(async () => {
+        await playGame(mineSweeper!, data, signal);
+      });
+    } else {
+      setIsPrelaying(true);
+      startTransition(async () => {
+        await playGame(mineSweeper!, actionLog, signal);
+      });
+    }
   }
 
   function pause() {
-    isReplaying = false;
-    // setIsPrelaying(false);
+    setIsPrelaying(false);
     controller.abort();
-    // setIsPrelaying(false);
   }
-
-  // useEffect(() => {
-  //   if (!isReplaying) return;
-
-  //   function schedule() {
-  //     return setTimeout(() => {
-  //       setTime((prev) => prev + 1000);
-  //       schedule();
-  //     }, 1000);
-  //   }
-
-  //   const id = schedule();
-
-  //   return () => {
-  //     clearTimeout(id);
-  //   };
-  // }, [isReplaying]);
 
   return (
     <div className={"flex items-center gap-2 p-2"}>
       <button className={"play-progress-btn w-7 h-7 flex justify-center items-center relative"}>
-        <Play
-          onClick={replay}
-          className={"w-4 h-4 pointer-events-auto"}
-          color={"#AFB8BF"}
-          fill={"#AFB8BF"}
-        />
+        {isReplaying ?
+          <Pause
+            onClick={pause}
+            className={"w-4 h-4 pointer-events-auto"}
+            color={"#AFB8BF"}
+            fill={"#AFB8BF"}
+          />
+        : <Play
+            onClick={replay}
+            className={"w-4 h-4 pointer-events-auto"}
+            color={"#AFB8BF"}
+            fill={"#AFB8BF"}
+          />
+        }
       </button>
       <div className={"relative w-full"}>
         <input

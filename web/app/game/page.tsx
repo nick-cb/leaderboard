@@ -40,7 +40,7 @@ export default function Game() {
 
   useEffect(() => {
     if (!data) return;
-  console.log("RUN");
+    console.log("RUN");
     board.updateState(data.board);
   }, [data]);
 
@@ -52,7 +52,7 @@ export default function Game() {
     <div className="panel bg-[#474E56] w-max" onContextMenu={handleContextMenu}>
       <div className={"flex board w-max relative flex-col pointer-events-none"}>
         <BoardProvider board={board}>
-          {board.state.map((row: Array<number | string>, y) => {
+          {board.getState().map((row: Array<number | string>, y) => {
             return (
               <div key={y} className={"flex"}>
                 {row.map((col, x) => {
@@ -86,7 +86,7 @@ export default function Game() {
 }
 
 const boardContext = createContext<ReturnType<typeof useBoard>>({
-  state: [],
+  // state: [],
   registerElement: () => {
     return () => {};
   },
@@ -96,6 +96,7 @@ const boardContext = createContext<ReturnType<typeof useBoard>>({
   updateState: () => {},
   getRevealableNeighbors: () => [],
   getElementWithCoordinate: () => null,
+  getState: () => [],
 });
 
 export function useCell() {
@@ -133,7 +134,8 @@ type UseBoardProviderProps = {
 function useBoard(props: UseBoardProviderProps) {
   const { initialState } = props;
   const cellSet = useRef<Set<HTMLDivElement>>(new Set());
-  const [state, setState] = useState(initialState);
+  const [, reRender] = useState(false);
+  const stateRef = useRef(initialState);
 
   const registerElement = useCallback((current: HTMLDivElement) => {
     cellSet.current.add(current);
@@ -176,6 +178,7 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   function getFlaggedNeighbors(c: { x: number; y: number }) {
+    const state = stateRef.current;
     for (const cell of cellSet.current) {
       if (!cell && !isThisCell(cell, c)) return [];
 
@@ -191,6 +194,7 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   function getRevealableNeighbors(c: { x: number; y: number }) {
+    const state = stateRef.current;
     for (const cell of cellSet.current) {
       if (!cell && !isThisCell(cell, c)) return [];
 
@@ -205,7 +209,6 @@ function useBoard(props: UseBoardProviderProps) {
 
   function toggleUnrevealedNeighborsPressVisual(c: { x: number; y: number }) {
     const revealableNeighbors = getRevealableNeighbors(c);
-    console.log(state);
     for (const { x: nX, y: nY } of revealableNeighbors) {
       const node = document.querySelector(`[data-coordinate="${nX},${nY}"]`);
       if (node instanceof HTMLDivElement) {
@@ -217,11 +220,18 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   function updateState(newState: (string | number)[][], options?: { force: boolean }) {
+    console.log({newState})
     const { force = false } = options ?? {};
+    stateRef.current = newState;
     if (force) {
-      return flushSync(() => setState(newState));
+      console.log("force update");
+      return flushSync(() => reRender((prev) => !prev));
     }
-    setState(newState);
+    reRender((prev) => !prev);
+  }
+
+  function getState() {
+    return stateRef.current;
   }
 
   function getElementWithCoordinate(c: { x: number; y: number }) {
@@ -233,7 +243,8 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   return {
-    state,
+    // state,
+    getState,
     updateState,
     registerElement,
     togglePressVisual,
