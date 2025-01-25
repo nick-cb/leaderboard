@@ -5,6 +5,7 @@ import { ProgressSlider } from "@/components/progress-slider";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 export default function Game() {
   const searchParams = useSearchParams();
@@ -39,6 +40,7 @@ export default function Game() {
 
   useEffect(() => {
     if (!data) return;
+  console.log("RUN");
     board.updateState(data.board);
   }, [data]);
 
@@ -73,7 +75,10 @@ export default function Game() {
             // logs={actionLog?.logs ?? []}
             moveCursor={moveCursor}
           />
-          <div ref={cursorRef} className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all duration-200"} />
+          <div
+            ref={cursorRef}
+            className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all duration-200"}
+          />
         </BoardProvider>
       </div>
     </div>
@@ -199,7 +204,9 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   function toggleUnrevealedNeighborsPressVisual(c: { x: number; y: number }) {
-    for (const { x: nX, y: nY } of getRevealableNeighbors(c)) {
+    const revealableNeighbors = getRevealableNeighbors(c);
+    console.log(state);
+    for (const { x: nX, y: nY } of revealableNeighbors) {
       const node = document.querySelector(`[data-coordinate="${nX},${nY}"]`);
       if (node instanceof HTMLDivElement) {
         const pressState = node.dataset["press"];
@@ -209,7 +216,11 @@ function useBoard(props: UseBoardProviderProps) {
     }
   }
 
-  function updateState(newState: (string | number)[][]) {
+  function updateState(newState: (string | number)[][], options?: { force: boolean }) {
+    const { force = false } = options ?? {};
+    if (force) {
+      return flushSync(() => setState(newState));
+    }
     setState(newState);
   }
 
