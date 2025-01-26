@@ -30,6 +30,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
     refetchOnReconnect: false,
     enabled: false,
   });
+  const duration = actionLog?.duration ?? 0;
 
   const [stepIdx, setStepIdx] = useState(0);
   const [time, setTime] = useState(0);
@@ -44,11 +45,36 @@ export function ProgressSlider(props: ProgressSliderProps) {
     });
   }
 
+  async function updateProgressSlider(actionLog: any, signal: AbortSignal) {
+    const duration = actionLog.duration;
+    // const speed = length / duration;
+    for (let i = 0; i < duration / 1000; i++) {
+      if (signal.aborted) return;
+      setTime((prev) => prev + 1000);
+      await waitFor(1000);
+    }
+    // function schedule() {
+    //   setTimeout(() => {
+    //     if (signal.aborted) return;
+
+    //     setTime((prev) => prev + 1000 * speed);
+    //     schedule();
+    //   }, 1000);
+    // }
+
+    // if (lastStep === actionLog.logs.length) {
+    //   setTime(0);
+    // } else {
+    //   setTime((prev) => prev + 1000 * speed);
+    // }
+    // schedule();
+  }
+
   async function playGame(mineSweeper: MineSweeper, actionLog: any, signal: AbortSignal) {
     console.log("start game from step", lastStep);
     for (let i = lastStep; i < actionLog.logs.length; i++) {
       const step = actionLog.logs[i];
-      console.log("step", i, step);
+      // console.log("step", i, step);
 
       moveCursor({ x: step.x, y: step.y });
       await waitFor(250);
@@ -75,13 +101,12 @@ export function ProgressSlider(props: ProgressSliderProps) {
       }
 
       board.updateState(mineSweeper.getMaskedBoardAs2DArray());
-      console.log(board.getState());
 
       const nextStep = actionLog.logs[i + 1];
       const nextTimestamp = nextStep ? new Date(nextStep.timestamp).getTime() : 0;
       const thisStepTimestamp = new Date(step.timestamp).getTime();
       const timeToNextStep = nextTimestamp - thisStepTimestamp;
-      console.log("wait for ", timeToNextStep / 1000 + "s", "before next step");
+      // console.log("wait for ", timeToNextStep / 1000 + "s", "before next step");
       lastStep = i + 1;
       await waitFor(timeToNextStep);
       if (signal.aborted) {
@@ -89,6 +114,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
         return;
       }
     }
+    controller.abort();
   }
 
   async function replay() {
@@ -115,11 +141,13 @@ export function ProgressSlider(props: ProgressSliderProps) {
     if (!actionLog) {
       const { data } = await refetch();
       setIsPrelaying(true);
+      updateProgressSlider(data, signal);
       startTransition(async () => {
         await playGame(mineSweeper!, data, signal);
       });
     } else {
       setIsPrelaying(true);
+      updateProgressSlider(actionLog, signal);
       startTransition(async () => {
         await playGame(mineSweeper!, actionLog, signal);
       });
@@ -154,8 +182,8 @@ export function ProgressSlider(props: ProgressSliderProps) {
           type="range"
           value={time}
           min={0}
-          max={0}
-          step={1 / 1000}
+          max={duration}
+          step={1000}
           onInput={(event) => setStepIdx(Math.floor(event.currentTarget.valueAsNumber))}
           ref={useCallback((current: HTMLInputElement) => {
             setLenght(current?.clientWidth ?? 0);
@@ -167,7 +195,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
             "action-logs-progress-thumb w-5 h-5 absolute left-0 top-1/2 -translate-y-1/2 cursor-pointer pointer-events-none"
           }
           style={{
-            transform: `translate(calc(${time / (0 / length)}px - 50%),-50%)`,
+            transform: `translate(calc(${time * (length / duration)}px - 50%),-50%)`,
           }}
         />
       </div>
