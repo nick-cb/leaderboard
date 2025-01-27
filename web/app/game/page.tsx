@@ -41,10 +41,6 @@ export default function Game() {
     const left = cellElement.offsetLeft;
     const top = cellElement.offsetTop;
     if (signal?.aborted) return null;
-    console.log([
-      { left: cellElement.offsetLeft + "px", top: cellElement.offsetTop + "px" },
-      { left: left + "px", top: top + "px" },
-    ]);
 
     const cursor = cursorRef.current;
     return cursor.animate(
