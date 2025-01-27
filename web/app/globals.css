@@ -10,7 +10,9 @@ html {
   width: 24px;
   height: 24px;
   background: #4d545c;
-  box-shadow: inset 3px 3px #6f7880, inset -3px -3px #232a32;
+  box-shadow:
+    inset 3px 3px #6f7880,
+    inset -3px -3px #232a32;
   position: relative;
 }
 
@@ -56,7 +58,9 @@ html {
 
 .board {
   padding: 6px;
-  box-shadow: inset 6px 6px #232a32, inset -6px -6px #6f7880;
+  box-shadow:
+    inset 6px 6px #232a32,
+    inset -6px -6px #6f7880;
   border: 8px solid #474e56;
   background: #394048;
 }
@@ -91,7 +95,9 @@ html {
 
 .panel {
   padding: 6px;
-  box-shadow: inset 6px 6px #6f7880, inset -6px -6px #232a32;
+  box-shadow:
+    inset 6px 6px #6f7880,
+    inset -6px -6px #232a32;
   position: relative;
 }
 
@@ -124,7 +130,9 @@ html {
 }
 
 .new-game-btn {
-  box-shadow: inset 4px 4px #6f7880, inset -4px -4px #232a32;
+  box-shadow:
+    inset 4px 4px #6f7880,
+    inset -4px -4px #232a32;
   position: relative;
 }
 
@@ -157,7 +165,9 @@ html {
 }
 
 .new-game-btn:active {
-  box-shadow: inset 4px 4px #232a32, inset -2px -2px #232a32;
+  box-shadow:
+    inset 4px 4px #232a32,
+    inset -2px -2px #232a32;
 }
 
 .new-game-btn:active span {
@@ -165,7 +175,9 @@ html {
 }
 
 .option-pane {
-  box-shadow: inset 4px 4px #232a32, inset -4px -4px #6f7880;
+  box-shadow:
+    inset 4px 4px #232a32,
+    inset -4px -4px #6f7880;
   border: 8px solid #474e56;
   position: relative;
 }
@@ -200,7 +212,8 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2") format("woff2"),
+  src:
+    url("/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2") format("woff2"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff") format("woff"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Bold.ttf") format("truetype");
   font-weight: bold;
@@ -209,7 +222,8 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("/fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.woff2") format("woff2"),
+  src:
+    url("/fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.woff2") format("woff2"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.woff") format("woff"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-BoldItalic.ttf") format("truetype");
   font-weight: bold;
@@ -218,7 +232,8 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("/fonts/DSEG7-Classic/DSEG7Classic-Italic.woff2") format("woff2"),
+  src:
+    url("/fonts/DSEG7-Classic/DSEG7Classic-Italic.woff2") format("woff2"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Italic.woff") format("woff"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Italic.ttf") format("truetype");
   font-weight: normal;
@@ -227,7 +242,8 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("/fonts/DSEG7-Classic/DSEG7Classic-Light.woff2") format("woff2"),
+  src:
+    url("/fonts/DSEG7-Classic/DSEG7Classic-Light.woff2") format("woff2"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Light.woff") format("woff"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Light.ttf") format("truetype");
   font-weight: 200;
@@ -236,7 +252,8 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("/fonts/DSEG7-Classic/DSEG7Classic-LightItalic.woff2") format("woff2"),
+  src:
+    url("/fonts/DSEG7-Classic/DSEG7Classic-LightItalic.woff2") format("woff2"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-LightItalic.woff") format("woff"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-LightItalic.ttf") format("truetype");
   font-weight: 200;
@@ -245,7 +262,8 @@ html {
 
 @font-face {
   font-family: "DSEG7-Classic";
-  src: url("/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2") format("woff2"),
+  src:
+    url("/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2") format("woff2"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff") format("woff"),
     url("/fonts/DSEG7-Classic/DSEG7Classic-Regular.ttf") format("truetype");
   font-weight: normal;
@@ -257,7 +275,9 @@ html {
 }
 
 .clock-panel {
-  box-shadow: inset 2px 2px #1e262e, inset -2px -2px #5f686f;
+  box-shadow:
+    inset 2px 2px #1e262e,
+    inset -2px -2px #5f686f;
   position: relative;
   font-family: "DSEG7-Classic";
 }
@@ -295,7 +315,9 @@ input[type="range"].action-logs-progress {
   appearance: none;
   cursor: pointer;
   background-color: #8f989f;
-  box-shadow: inset 1px 1px #232a32, inset -1px -1px #6f7880;
+  box-shadow:
+    inset 1px 1px #232a32,
+    inset -1px -1px #6f7880;
 }
 
 input[type="range"].action-logs-progress::-webkit-slider-runnable-track {
@@ -356,7 +378,9 @@ input[type="range"].action-logs-progress:focus {
 
 .action-logs-progress-thumb {
   background-color: #4d545c;
-  box-shadow: inset 3px 3px #6f7880, inset -3px -3px #232a32;
+  box-shadow:
+    inset 3px 3px #6f7880,
+    inset -3px -3px #232a32;
 }
 
 .action-logs-progress-thumb::before {
@@ -387,7 +411,9 @@ input[type="range"].action-logs-progress:focus {
 }
 
 .play-progress-btn {
-  box-shadow: inset 3px 3px #6f7880, inset -3px -3px #232a32;
+  box-shadow:
+    inset 3px 3px #6f7880,
+    inset -3px -3px #232a32;
 }
 
 .play-progress-btn::before {
@@ -419,10 +445,48 @@ input[type="range"].action-logs-progress:focus {
 }
 
 .play-progress-btn:active {
-  box-shadow: inset 4px 4px #232a32, inset -2px -2px #232a32;
+  box-shadow:
+    inset 4px 4px #232a32,
+    inset -2px -2px #232a32;
 }
 
 .play-progress-btn:active svg {
   transform: translateX(2px) translateY(2px);
+}
+
+.control-panel {
+  box-shadow:
+    inset 6px 6px #232a32,
+    inset -6px -6px #6f7880;
+  border: 8px solid #474e56;
+  background: #394048;
+}
+
+.control-panel::before {
+  content: "";
+  display: block;
+  width: 6px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #6f7880;
+  bottom: -6px;
+  left: 0px;
+  position: absolute;
+  transform-origin: top left;
+  transform: rotate(-90deg);
+}
+
+.control-panel::after {
+  content: "";
+  display: block;
+  width: 6px;
+  aspect-ratio: 1;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: #6f7880;
+  top: -6px;
+  right: 0px;
+  position: absolute;
+  transform-origin: bottom right;
+  transform: rotate(-90deg);
 }
 

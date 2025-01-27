@@ -174,7 +174,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
   }
 
   return (
-    <div className={"flex items-center gap-2 p-2"}>
+    <div className={"flex items-center gap-2 p-2 w-full"}>
       <button className={"play-progress-btn w-7 h-7 flex justify-center items-center relative"}>
         {isReplaying ?
           <Pause

@@ -1,13 +1,15 @@
 "use client";
 
 import { Cell } from "@/components/cell";
+import { Clock } from "@/components/clock";
 import { MoveCursoFn, ProgressSlider } from "@/components/progress-slider";
-import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 export default function Game() {
+  let route = useRouter();
   const searchParams = useSearchParams();
   const gameId = searchParams.get("gameId");
   const { data } = useQuery({
@@ -23,6 +25,21 @@ export default function Game() {
     refetchOnReconnect: false,
   });
   const board = useBoard({ initialState: data?.board ?? [] });
+
+  const mutation = useMutation({
+    mutationKey: ["new-game"],
+    mutationFn: async () => {
+      const url = new URL("http://localhost:8000/game/new");
+      url.searchParams.set("mode", "2");
+      const response = await fetch(url);
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: (data) => {
+      route.push(`/game?gameId=${data.id}`);
+    },
+  });
+
   const cursorRef = useRef<HTMLDivElement>(null);
 
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
@@ -58,6 +75,23 @@ export default function Game() {
 
   return (
     <div className="panel bg-[#474E56] w-max" onContextMenu={handleContextMenu}>
+      <div className="control-panel w-full flex p-3 relative justify-between gap-2">
+        <button
+          onClick={() => {
+            mutation.mutate();
+          }}
+          className="new-game-btn text-2xl px-2 py-1"
+        >
+          <span className="block">
+            {data.result === 0 ?
+              "😵"
+            : data.result === 1 ?
+              "🥳"
+            : "😊"}
+          </span>
+        </button>
+        <Clock run={false} />
+      </div>
       <div className={"flex board w-max relative flex-col pointer-events-none"}>
         <BoardProvider board={board}>
           {board.getState().map((row: Array<number | string>, y) => {
@@ -76,13 +110,13 @@ export default function Game() {
               </div>
             );
           })}
-          <ProgressSlider gameId={gameId} board={board} moveCursor={moveCursor} />
           <div
             ref={cursorRef}
             className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all"}
           />
         </BoardProvider>
       </div>
+      <ProgressSlider gameId={gameId} board={board} moveCursor={moveCursor} />
     </div>
   );
 }
