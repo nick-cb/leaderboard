@@ -1,7 +1,7 @@
 "use client";
 
 import { Cell } from "@/components/cell";
-import { ProgressSlider } from "@/components/progress-slider";
+import { MoveCursoFn, ProgressSlider } from "@/components/progress-slider";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -29,13 +29,7 @@ export default function Game() {
     event.preventDefault();
   }
 
-  type MoveCursorParams = {
-    x: number;
-    y: number;
-    speed?: number;
-    signal?: AbortSignal;
-  };
-  function moveCursor({ x, y, speed, signal }: MoveCursorParams) {
+  const moveCursor: MoveCursoFn = ({ x, y, speed, signal }) => {
     const cellElement = board.getElementWithCoordinate({ x, y });
     if (!cellElement || !cursorRef.current) return null;
     const left = cellElement.offsetLeft;
@@ -50,9 +44,7 @@ export default function Game() {
       ],
       { duration: speed ?? 200, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
     );
-    // cursorRef.current.style.left = left + "px";
-    // cursorRef.current.style.top = top + "px";
-  }
+  };
 
   useEffect(() => {
     if (!data) return;
@@ -84,13 +76,7 @@ export default function Game() {
               </div>
             );
           })}
-          <ProgressSlider
-            gameId={gameId}
-            board={board}
-            // duration={actionLog?.duration ?? 0}
-            // logs={actionLog?.logs ?? []}
-            moveCursor={moveCursor}
-          />
+          <ProgressSlider gameId={gameId} board={board} moveCursor={moveCursor} />
           <div
             ref={cursorRef}
             className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all"}

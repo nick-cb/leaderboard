@@ -10,15 +10,16 @@ let mineSweeper: MineSweeper | undefined;
 let lastStep = -1;
 let controller = new AbortController();
 
-type ProgressSliderProps = {
+export type MoveCursoFn = (c: {
+  x: number;
+  y: number;
+  speed?: number;
+  signal?: AbortSignal;
+}) => Animation | null;
+export type ProgressSliderProps = {
   gameId: string | null;
   board: Board;
-  moveCursor: (c: {
-    x: number;
-    y: number;
-    speed?: number;
-    signal?: AbortSignal;
-  }) => Animation | null;
+  moveCursor: MoveCursoFn;
 };
 export function ProgressSlider(props: ProgressSliderProps) {
   const { gameId, board, moveCursor } = props;
@@ -52,27 +53,11 @@ export function ProgressSlider(props: ProgressSliderProps) {
 
   async function updateProgressSlider(actionLog: any, signal: AbortSignal) {
     const duration = actionLog.duration;
-    // const speed = length / duration;
     for (let i = 0; i < duration / 1000; i++) {
       if (signal.aborted) return;
       setTime((prev) => prev + 1000);
       await waitFor(1000);
     }
-    // function schedule() {
-    //   setTimeout(() => {
-    //     if (signal.aborted) return;
-
-    //     setTime((prev) => prev + 1000 * speed);
-    //     schedule();
-    //   }, 1000);
-    // }
-
-    // if (lastStep === actionLog.logs.length) {
-    //   setTime(0);
-    // } else {
-    //   setTime((prev) => prev + 1000 * speed);
-    // }
-    // schedule();
   }
 
   async function playGame(mineSweeper: MineSweeper, actionLog: any, signal: AbortSignal) {
