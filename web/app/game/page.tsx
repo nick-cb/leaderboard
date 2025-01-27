@@ -29,13 +29,33 @@ export default function Game() {
     event.preventDefault();
   }
 
-  function moveCursor({ x, y }: { x: number; y: number }) {
+  type MoveCursorParams = {
+    x: number;
+    y: number;
+    speed?: number;
+    signal?: AbortSignal;
+  };
+  function moveCursor({ x, y, speed, signal }: MoveCursorParams) {
     const cellElement = board.getElementWithCoordinate({ x, y });
-    if (!cellElement || !cursorRef.current) return;
+    if (!cellElement || !cursorRef.current) return null;
     const left = cellElement.offsetLeft;
     const top = cellElement.offsetTop;
-    cursorRef.current.style.left = left + "px";
-    cursorRef.current.style.top = top + "px";
+    if (signal?.aborted) return null;
+    console.log([
+      { left: cellElement.offsetLeft + "px", top: cellElement.offsetTop + "px" },
+      { left: left + "px", top: top + "px" },
+    ]);
+
+    const cursor = cursorRef.current;
+    return cursor.animate(
+      [
+        { left: cursor.offsetLeft + "px", top: cursor.offsetTop + "px" },
+        { left: left + "px", top: top + "px" },
+      ],
+      { duration: speed ?? 200, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
+    );
+    // cursorRef.current.style.left = left + "px";
+    // cursorRef.current.style.top = top + "px";
   }
 
   useEffect(() => {
@@ -77,7 +97,7 @@ export default function Game() {
           />
           <div
             ref={cursorRef}
-            className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all duration-200"}
+            className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all"}
           />
         </BoardProvider>
       </div>

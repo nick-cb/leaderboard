@@ -13,7 +13,12 @@ let controller = new AbortController();
 type ProgressSliderProps = {
   gameId: string | null;
   board: Board;
-  moveCursor: (c: { x: number; y: number; speed?: number }) => void;
+  moveCursor: (c: {
+    x: number;
+    y: number;
+    speed?: number;
+    signal?: AbortSignal;
+  }) => Animation | null;
 };
 export function ProgressSlider(props: ProgressSliderProps) {
   const { gameId, board, moveCursor } = props;
@@ -90,8 +95,9 @@ export function ProgressSlider(props: ProgressSliderProps) {
     console.log("start game from step", lastStep + 1);
 
     const firstStep = actionLog.logs[lastStep + 1];
-    moveCursor({ x: firstStep.x, y: firstStep.y });
-    await waitFor(250);
+    moveCursor({ x: firstStep.x, y: firstStep.y, signal });
+    await waitFor(cursorMoveDuration + mouseHoverDuration);
+    if (signal.aborted) return;
 
     for (let i = lastStep + 1; i < actionLog.logs.length; i++) {
       const step = actionLog.logs[i];
@@ -122,20 +128,15 @@ export function ProgressSlider(props: ProgressSliderProps) {
 
       lastStep = i;
       const nextStep = actionLog.logs[i + 1];
+      if (!nextStep) return;
       const nextTimestamp = nextStep ? new Date(nextStep.timestamp).getTime() : 0;
       const thisStepTimestamp = new Date(step.timestamp).getTime();
       const timeToNextStep = nextTimestamp - thisStepTimestamp;
 
       const moveSpeed = Math.min(cursorMoveDuration, timeToNextStep - mouseDownDuration);
-      console.log(
-        timeToNextStep,
-        moveSpeed,
-        timeToNextStep - moveSpeed - mouseDownDuration - mouseHoverDuration,
-        moveSpeed + mouseHoverDuration,
-      );
       await waitFor(timeToNextStep - moveSpeed - mouseDownDuration - mouseHoverDuration);
 
-      moveCursor({ x: nextStep.x, y: nextStep.y, speed: moveSpeed });
+      moveCursor({ x: nextStep.x, y: nextStep.y, speed: moveSpeed, signal });
       await waitFor(moveSpeed + mouseHoverDuration);
       if (signal.aborted) {
         console.log("pause after step", i, step);
@@ -165,7 +166,6 @@ export function ProgressSlider(props: ProgressSliderProps) {
       const emptyBoard = state.map((row) => row.map(() => "-"));
       board.updateState(emptyBoard, { force: true });
     }
-    console.log(mineSweeper);
 
     if (!actionLog) {
       const { data } = await refetch();
