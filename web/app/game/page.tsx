@@ -220,7 +220,6 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   function updateState(newState: (string | number)[][], options?: { force: boolean }) {
-    console.log({newState})
     const { force = false } = options ?? {};
     stateRef.current = newState;
     if (force) {

@@ -7,13 +7,13 @@ import { MineSweeper, Tile } from "minesweeper";
 import { useQuery } from "@tanstack/react-query";
 
 let mineSweeper: MineSweeper | undefined;
-let lastStep = 0;
+let lastStep = -1;
 let controller = new AbortController();
 
 type ProgressSliderProps = {
   gameId: string | null;
   board: Board;
-  moveCursor: (c: { x: number; y: number }) => void;
+  moveCursor: (c: { x: number; y: number; speed?: number }) => void;
 };
 export function ProgressSlider(props: ProgressSliderProps) {
   const { gameId, board, moveCursor } = props;
@@ -71,13 +71,31 @@ export function ProgressSlider(props: ProgressSliderProps) {
   }
 
   async function playGame(mineSweeper: MineSweeper, actionLog: any, signal: AbortSignal) {
-    console.log("start game from step", lastStep);
-    for (let i = lastStep; i < actionLog.logs.length; i++) {
-      const step = actionLog.logs[i];
-      // console.log("step", i, step);
+    /*
+    time budget: [---------------------] max: timeToNextStep
+    cursor duration: max 200ms
+    mouse hover duration: 50ms
+    mouse down duration: 50ms
+    -> cursor duration and mouse down and mouse hover duration must be within the time budget
+    -> the animation must happen at the end of time budget
+    fixed cost = timeToNextStep - cursor duration - mouse down duration - mouse hover duration
+    time to wait before next step = timeToNextStep - fixed cost
+    
+    Q: What if the timeToNextStep is smaller than the total of fixed cost?
+    A: Change the cursor duration based on the time budget
+    */
+    const cursorMoveDuration = 200;
+    const mouseDownDuration = 50;
+    const mouseHoverDuration = 50;
+    console.log("start game from step", lastStep + 1);
 
-      moveCursor({ x: step.x, y: step.y });
-      await waitFor(250);
+    const firstStep = actionLog.logs[lastStep + 1];
+    moveCursor({ x: firstStep.x, y: firstStep.y });
+    await waitFor(250);
+
+    for (let i = lastStep + 1; i < actionLog.logs.length; i++) {
+      const step = actionLog.logs[i];
+      console.log("step", i, step);
 
       if (step.action === "reveal") {
         board.togglePressVisual({ x: step.x, y: step.y });
@@ -85,7 +103,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
       if (step.action === "reveal-adj") {
         board.toggleUnrevealedNeighborsPressVisual({ x: step.x, y: step.y });
       }
-      await waitFor(50);
+      await waitFor(mouseDownDuration);
 
       if (step.action === "reveal") {
         mineSweeper.revealTile({ x: step.x, y: step.y }, () => {});
@@ -102,13 +120,23 @@ export function ProgressSlider(props: ProgressSliderProps) {
 
       board.updateState(mineSweeper.getMaskedBoardAs2DArray());
 
+      lastStep = i;
       const nextStep = actionLog.logs[i + 1];
       const nextTimestamp = nextStep ? new Date(nextStep.timestamp).getTime() : 0;
       const thisStepTimestamp = new Date(step.timestamp).getTime();
       const timeToNextStep = nextTimestamp - thisStepTimestamp;
-      // console.log("wait for ", timeToNextStep / 1000 + "s", "before next step");
-      lastStep = i + 1;
-      await waitFor(timeToNextStep);
+
+      const moveSpeed = Math.min(cursorMoveDuration, timeToNextStep - mouseDownDuration);
+      console.log(
+        timeToNextStep,
+        moveSpeed,
+        timeToNextStep - moveSpeed - mouseDownDuration - mouseHoverDuration,
+        moveSpeed + mouseHoverDuration,
+      );
+      await waitFor(timeToNextStep - moveSpeed - mouseDownDuration - mouseHoverDuration);
+
+      moveCursor({ x: nextStep.x, y: nextStep.y, speed: moveSpeed });
+      await waitFor(moveSpeed + mouseHoverDuration);
       if (signal.aborted) {
         console.log("pause after step", i, step);
         return;
@@ -137,6 +165,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
       const emptyBoard = state.map((row) => row.map(() => "-"));
       board.updateState(emptyBoard, { force: true });
     }
+    console.log(mineSweeper);
 
     if (!actionLog) {
       const { data } = await refetch();

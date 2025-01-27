@@ -31,7 +31,6 @@ export function Cell(props: CellProps) {
   const revealAdjTilesMutation = useMutation({
     mutationKey: ["reveal-adj-tile"],
     mutationFn: async ({ gameId, coordinate }: any) => {
-      console.log({ gameId, coordinate });
       if (!coordinate) {
         throw new Error("Invalid params");
       }
