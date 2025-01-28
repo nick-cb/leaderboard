@@ -1,13 +1,7 @@
-export function animationInterval(
-  ms: number,
-  signal: AbortSignal,
-  callback: Function
-) {
+export function animationInterval(ms: number, signal: AbortSignal, callback: Function) {
   // Prefer currentTime, as it'll better sync animtions queued in the
   // same frame, but if it isn't supported, performance.now() is fine.
-  const start = document.timeline
-    ? (document.timeline.currentTime as number)
-    : performance.now();
+  const start = document.timeline ? (document.timeline.currentTime as number) : performance.now();
 
   function frame(time: number) {
     if (signal.aborted) return;
@@ -24,4 +18,19 @@ export function animationInterval(
   }
 
   scheduleFrame(start);
+}
+
+export function checkVisibility(element: HTMLElement) {
+  const styleMap = element.computedStyleMap();
+  const visibility = styleMap.get("visibility");
+  const opacity = styleMap.get("opacity");
+
+  if (visibility instanceof CSSKeywordValue) {
+    return !(visibility.value === "hidden");
+  }
+  if (opacity instanceof CSSUnitValue) {
+    return !(opacity.value === 0);
+  }
+
+  return true;
 }

@@ -2,7 +2,7 @@
 
 import { Cell } from "@/components/cell";
 import { Clock } from "@/components/clock";
-import { MoveCursoFn, ProgressSlider } from "@/components/progress-slider";
+import { ProgressSlider } from "@/components/progress-slider";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -54,23 +54,6 @@ export default function Game() {
   function handleContextMenu(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     event.preventDefault();
   }
-
-  const moveCursor: MoveCursoFn = ({ x, y, speed, signal }) => {
-    const cellElement = board.getElementWithCoordinate({ x, y });
-    if (!cellElement || !cursorRef.current) return null;
-    const left = cellElement.offsetLeft;
-    const top = cellElement.offsetTop;
-    if (signal?.aborted) return null;
-
-    const cursor = cursorRef.current;
-    return cursor.animate(
-      [
-        { left: cursor.offsetLeft + "px", top: cursor.offsetTop + "px" },
-        { left: left + "px", top: top + "px" },
-      ],
-      { duration: speed ?? 200, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
-    );
-  };
 
   useEffect(() => {
     if (!data) return;
@@ -125,17 +108,16 @@ export default function Game() {
           })}
           <div
             ref={cursorRef}
-            className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all"}
+            className={"absolute rounded-full w-6 h-6 bg-white/30 transition-all invisible"}
           />
         </BoardProvider>
       </div>
-      <ProgressSlider gameId={gameId} board={board} moveCursor={moveCursor} />
+      <ProgressSlider gameId={gameId} board={board} cursorRef={cursorRef} />
     </div>
   );
 }
 
 const boardContext = createContext<ReturnType<typeof useBoard>>({
-  // state: [],
   registerElement: () => {
     return () => {};
   },

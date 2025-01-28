@@ -140,7 +140,6 @@ server.get(/\/game\/\d+/, async (req, res) => {
   }
   id = parseInt(id);
   const game = await gameController.getGameFromPoolOrFromDatabase(id);
-  console.log(game);
   return res.json({
     gameId: id,
     result: game.result,
@@ -184,7 +183,6 @@ server.post("/login", async (req, res) => {
 server.post("/$sudo/finish-game", async (req, res) => {
   try {
     const body = req.body;
-    console.log({ body });
     const gameId = body.gameId;
     const result = body.result;
     if (cookies().get("userId") != 4) {

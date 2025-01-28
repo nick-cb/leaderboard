@@ -5,24 +5,25 @@ import { Pause, Play } from "lucide-react";
 import { startTransition, useCallback, useState } from "react";
 import { MineSweeper, Tile } from "minesweeper";
 import { useQuery } from "@tanstack/react-query";
+import { checkVisibility } from "@/lib/utils";
 
 let mineSweeper: MineSweeper | undefined;
 let lastStep = -1;
 let controller = new AbortController();
 
-export type MoveCursoFn = (c: {
+type MoveCursoParams = {
   x: number;
   y: number;
   speed?: number;
   signal?: AbortSignal;
-}) => Animation | null;
+};
 export type ProgressSliderProps = {
   gameId: string | null;
   board: UseBoardReturn;
-  moveCursor: MoveCursoFn;
+  cursorRef: React.RefObject<HTMLDivElement | null>;
 };
 export function ProgressSlider(props: ProgressSliderProps) {
-  const { gameId, board, moveCursor } = props;
+  const { gameId, board, cursorRef } = props;
   const { data: actionLog, refetch } = useQuery({
     queryKey: ["action-logs", gameId],
     queryFn: async () => {
@@ -38,10 +39,41 @@ export function ProgressSlider(props: ProgressSliderProps) {
   });
   const duration = actionLog?.duration ?? 0;
 
-  const [stepIdx, setStepIdx] = useState(0);
   const [time, setTime] = useState(0);
   const [length, setLenght] = useState(0);
   const [isReplaying, setIsPrelaying] = useState(false);
+
+  function toggleCursorVisibility() {
+    const cursor = cursorRef.current;
+    if (!cursor) return;
+
+    console.warn("visibility", checkVisibility(cursor));
+    if (checkVisibility(cursor)) {
+      cursor.style.visibility = "hidden";
+    } else {
+      cursor.style.visibility = "visible";
+    }
+  }
+
+  function moveCursor({ x, y, speed, signal }: MoveCursoParams) {
+    const cellElement = board.getElementWithCoordinate({ x, y });
+    if (!cellElement || !cursorRef.current) return null;
+    const left = cellElement.offsetLeft;
+    const top = cellElement.offsetTop;
+    const cursor = cursorRef.current;
+
+    if (signal?.aborted) {
+      return null;
+    }
+
+    return cursor.animate(
+      [
+        { left: cursor.offsetLeft + "px", top: cursor.offsetTop + "px" },
+        { left: left + "px", top: top + "px" },
+      ],
+      { duration: speed ?? 200, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "forwards" },
+    );
+  }
 
   async function waitFor(ms: number) {
     return new Promise((resolve) => {
@@ -79,6 +111,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
     const mouseHoverDuration = 50;
     console.log("start game from step", lastStep + 1);
 
+    toggleCursorVisibility();
     const firstStep = actionLog.logs[lastStep + 1];
     moveCursor({ x: firstStep.x, y: firstStep.y, signal });
     await waitFor(cursorMoveDuration + mouseHoverDuration);
@@ -109,7 +142,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
         mineSweeper.toggleFlagTile({ x: step.x, y: step.y });
       }
 
-      board.updateState(mineSweeper.getMaskedBoardAs2DArray());
+      board.updateState({ ...board.getState(), grid: mineSweeper.getMaskedBoardAs2DArray() });
 
       lastStep = i;
       const nextStep = actionLog.logs[i + 1];
@@ -128,7 +161,9 @@ export function ProgressSlider(props: ProgressSliderProps) {
         return;
       }
     }
+
     controller.abort();
+    toggleCursorVisibility();
   }
 
   async function replay() {
@@ -140,16 +175,16 @@ export function ProgressSlider(props: ProgressSliderProps) {
     if (!mineSweeper) {
       const state = board.getState();
       mineSweeper = MineSweeper.from({
-        rows: state.length,
-        cols: state.length,
-        tiles: state.flatMap((row, y) => {
+        rows: state.grid.length,
+        cols: state.grid.length,
+        tiles: state.grid.flatMap((row, y) => {
           return row.map((col, x) => {
             return new Tile({ x, y, constant: col, constrains: [row.length, row.length] });
           });
         }),
       });
-      const emptyBoard = state.map((row) => row.map(() => "-"));
-      board.updateState(emptyBoard, { force: true });
+      const emptyBoard = state.grid.map((row) => row.map(() => "-"));
+      board.updateState({ ...state, grid: emptyBoard }, { force: true });
     }
 
     if (!actionLog) {
@@ -170,6 +205,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
 
   function pause() {
     setIsPrelaying(false);
+    toggleCursorVisibility();
     controller.abort();
   }
 
@@ -198,7 +234,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
           min={0}
           max={duration}
           step={1000}
-          onInput={(event) => setStepIdx(Math.floor(event.currentTarget.valueAsNumber))}
+          onInput={() => {}}
           ref={useCallback((current: HTMLInputElement) => {
             setLenght(current?.clientWidth ?? 0);
           }, [])}
