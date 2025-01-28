@@ -7,10 +7,10 @@ type CellProps = {
   value: string | number;
   coordinate: [number, number];
   gameId: number;
-  updateResult: (result: number) => void;
+  // updateResult: (result: number) => void;
 };
 export function Cell(props: CellProps) {
-  const { value, coordinate, gameId, updateResult } = props;
+  const { value, coordinate, gameId } = props;
   const { board, cellRef } = useCell();
   const isRevealed = typeof value !== "string";
   const revealTileMutation = useMutation({
@@ -26,8 +26,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      board.updateState(data.board);
-      updateResult(data.result);
+      board.updateState({ ...data, grid: data.board });
     },
   });
   const revealAdjTilesMutation = useMutation({
@@ -43,8 +42,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      board.updateState(data.board);
-      updateResult(data.result);
+      board.updateState({ ...data, grid: data.board });
     },
   });
   const flagTileMutation = useMutation({
@@ -60,7 +58,7 @@ export function Cell(props: CellProps) {
       return data;
     },
     onSuccess: (data) => {
-      board.updateState(data.board);
+      board.updateState({ ...data, grid: data.board });
     },
   });
   const logActionMutation = useMutation({

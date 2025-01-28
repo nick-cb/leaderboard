@@ -8,6 +8,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+type Board = {
+  result: number;
+  grid: Array<(string | number)[]>;
+  isRunning: boolean;
+};
 export default function Game() {
   let route = useRouter();
   const searchParams = useSearchParams();
@@ -24,8 +29,8 @@ export default function Game() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-  const board = useBoard({ initialState: data?.board ?? [] });
-  const [result, setResult] = useState(-1);
+  const board = useBoard({ initialState: { result: -1, grid: [], isRunning: false } });
+  // const [result, setResult] = useState(-1);
 
   const mutation = useMutation({
     mutationKey: ["new-game"],
@@ -64,14 +69,9 @@ export default function Game() {
     );
   };
 
-  function updateResult(result: number) {
-    setResult(result);
-  }
-
   useEffect(() => {
     if (!data) return;
-    board.updateState(data.board);
-    setResult(data.result);
+    board.updateState({ grid: data.board, result: data.result, isRunning: false });
   }, [data]);
 
   if (!data) {
@@ -88,18 +88,18 @@ export default function Game() {
           className="new-game-btn text-2xl px-2 py-1"
         >
           <span className="block">
-            {result === 0 ?
+            {board.getState().result === 0 ?
               "😵"
-            : result === 1 ?
+            : board.getState().result === 1 ?
               "🥳"
             : "😊"}
           </span>
         </button>
-        <Clock run={false} />
+        <Clock run={board.getState().isRunning} />
       </div>
       <div className={"flex board w-max relative flex-col pointer-events-none"}>
         <BoardProvider board={board}>
-          {board.getState().map((row: Array<number | string>, y) => {
+          {board.getState().grid.map((row: Array<number | string>, y) => {
             return (
               <div key={y} className={"flex"}>
                 {row.map((col, x) => {
@@ -109,7 +109,6 @@ export default function Game() {
                       value={col}
                       coordinate={[x, y]}
                       gameId={parseInt(gameId ?? "-1")}
-                      updateResult={updateResult}
                     />
                   );
                 })}
@@ -138,7 +137,7 @@ const boardContext = createContext<ReturnType<typeof useBoard>>({
   updateState: () => {},
   getRevealableNeighbors: () => [],
   getElementWithCoordinate: () => null,
-  getState: () => [],
+  getState: () => ({ grid: [], result: -1, isRunning: false }),
 });
 
 export function useCell() {
@@ -171,7 +170,7 @@ function BoardProvider(props: React.PropsWithChildren<BoardProviderProps>) {
 }
 
 type UseBoardProviderProps = {
-  initialState: Array<(string | number)[]>;
+  initialState: Board;
 };
 function useBoard(props: UseBoardProviderProps) {
   const { initialState } = props;
@@ -220,7 +219,7 @@ function useBoard(props: UseBoardProviderProps) {
   }
 
   function getFlaggedNeighbors(c: { x: number; y: number }) {
-    const state = stateRef.current;
+    const grid = stateRef.current.grid;
     for (const cell of cellSet.current) {
       if (!cell && !isThisCell(cell, c)) return [];
 
@@ -229,20 +228,20 @@ function useBoard(props: UseBoardProviderProps) {
 
       const { x, y } = c;
       return getNeighbors({ x: x, y: y }).filter((n) => {
-        return state[n.y]?.[n.x] && state[n.y][n.x] === "+";
+        return grid[n.y]?.[n.x] && grid[n.y][n.x] === "+";
       });
     }
     return [];
   }
 
   function getRevealableNeighbors(c: { x: number; y: number }) {
-    const state = stateRef.current;
+    const grid = stateRef.current.grid;
     for (const cell of cellSet.current) {
       if (!cell && !isThisCell(cell, c)) return [];
 
       const { x, y } = c;
       return getNeighbors({ x: x, y: y }).filter((n) => {
-        return state[n.y]?.[n.x] && state[n.y][n.x] === "-";
+        return grid[n.y]?.[n.x] && grid[n.y][n.x] === "-";
       });
     }
 
@@ -261,7 +260,7 @@ function useBoard(props: UseBoardProviderProps) {
     }
   }
 
-  function updateState(newState: (string | number)[][], options?: { force: boolean }) {
+  function updateState(newState: Board, options?: { force: boolean }) {
     const { force = false } = options ?? {};
     stateRef.current = newState;
     if (force) {
@@ -294,4 +293,4 @@ function useBoard(props: UseBoardProviderProps) {
     getElementWithCoordinate,
   };
 }
-export type Board = ReturnType<typeof useBoard>;
+export type UseBoardReturn = ReturnType<typeof useBoard>;

@@ -42,16 +42,16 @@ server.get(/\/game\/\d+\/reveal-tile/, async (req, res) => {
   }
   coordinate = [parseInt(coordinate[0]), parseInt(coordinate[1])];
   const id = url.pathname.split("/")[2];
-  const [game, tiles] = await gameController.revealTile(parseInt(id), parseInt(userId), {
+  const game = await gameController.revealTile(parseInt(id), parseInt(userId), {
     x: coordinate[0],
     y: coordinate[1],
   });
-  console.log(tiles);
 
   return res.json({
     id: id,
     result: game.result,
     board: game.getMaskedBoardAs2DArray(),
+    isRunning: game.isFinished() ? false : !!game.startTime,
   });
 });
 
@@ -81,6 +81,7 @@ server.get(/\/game\/\d+\/reveal-adj-tiles/, async (req, res) => {
     id: id,
     result: game.result,
     board: game.getMaskedBoardAs2DArray(),
+    isRunning: game.isFinished() ? false : !!game.startTime,
   });
 });
 
@@ -106,7 +107,9 @@ server.get(/\/game\/\d+\/flag-tile/, async (req, res) => {
 
   return res.json({
     id: id,
+    result: game.result,
     board: game.getMaskedBoardAs2DArray(),
+    isRunning: game.isFinished() ? false : !!game.startTime,
   });
 });
 

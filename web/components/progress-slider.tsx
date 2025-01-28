@@ -1,6 +1,6 @@
 "use client";
 
-import { Board } from "@/app/game/page";
+import { UseBoardReturn } from "@/app/game/page";
 import { Pause, Play } from "lucide-react";
 import { startTransition, useCallback, useState } from "react";
 import { MineSweeper, Tile } from "minesweeper";
@@ -18,7 +18,7 @@ export type MoveCursoFn = (c: {
 }) => Animation | null;
 export type ProgressSliderProps = {
   gameId: string | null;
-  board: Board;
+  board: UseBoardReturn;
   moveCursor: MoveCursoFn;
 };
 export function ProgressSlider(props: ProgressSliderProps) {
