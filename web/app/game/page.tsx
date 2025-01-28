@@ -25,6 +25,7 @@ export default function Game() {
     refetchOnReconnect: false,
   });
   const board = useBoard({ initialState: data?.board ?? [] });
+  const [result, setResult] = useState(-1);
 
   const mutation = useMutation({
     mutationKey: ["new-game"],
@@ -63,10 +64,14 @@ export default function Game() {
     );
   };
 
+  function updateResult(result: number) {
+    setResult(result);
+  }
+
   useEffect(() => {
     if (!data) return;
-    console.log("RUN");
     board.updateState(data.board);
+    setResult(data.result);
   }, [data]);
 
   if (!data) {
@@ -83,9 +88,9 @@ export default function Game() {
           className="new-game-btn text-2xl px-2 py-1"
         >
           <span className="block">
-            {data.result === 0 ?
+            {result === 0 ?
               "😵"
-            : data.result === 1 ?
+            : result === 1 ?
               "🥳"
             : "😊"}
           </span>
@@ -104,6 +109,7 @@ export default function Game() {
                       value={col}
                       coordinate={[x, y]}
                       gameId={parseInt(gameId ?? "-1")}
+                      updateResult={updateResult}
                     />
                   );
                 })}
@@ -259,7 +265,6 @@ function useBoard(props: UseBoardProviderProps) {
     const { force = false } = options ?? {};
     stateRef.current = newState;
     if (force) {
-      console.log("force update");
       return flushSync(() => reRender((prev) => !prev));
     }
     reRender((prev) => !prev);
