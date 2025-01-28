@@ -52,6 +52,8 @@ server.get(/\/game\/\d+\/reveal-tile/, async (req, res) => {
     result: game.result,
     board: game.getMaskedBoardAs2DArray(),
     isRunning: game.isFinished() ? false : !!game.startTime,
+    startTime: game.startTime,
+    endTime: game.endTime,
   });
 });
 
@@ -82,6 +84,8 @@ server.get(/\/game\/\d+\/reveal-adj-tiles/, async (req, res) => {
     result: game.result,
     board: game.getMaskedBoardAs2DArray(),
     isRunning: game.isFinished() ? false : !!game.startTime,
+    startTime: game.startTime,
+    endTime: game.endTime,
   });
 });
 
@@ -110,6 +114,8 @@ server.get(/\/game\/\d+\/flag-tile/, async (req, res) => {
     result: game.result,
     board: game.getMaskedBoardAs2DArray(),
     isRunning: game.isFinished() ? false : !!game.startTime,
+    startTime: game.startTime,
+    endTime: game.endTime,
   });
 });
 
@@ -134,10 +140,14 @@ server.get(/\/game\/\d+/, async (req, res) => {
   }
   id = parseInt(id);
   const game = await gameController.getGameFromPoolOrFromDatabase(id);
+  console.log(game);
   return res.json({
     gameId: id,
     result: game.result,
     board: game.getMaskedBoardAs2DArray(),
+    isRunning: game.isFinished() ? false : !!game.startTime,
+    startTime: game.startTime,
+    endTime: game.endTime,
   });
 });
 

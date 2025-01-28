@@ -12,6 +12,8 @@ type Board = {
   result: number;
   grid: Array<(string | number)[]>;
   isRunning: boolean;
+  startTime: number;
+  endTime: number;
 };
 export default function Game() {
   let route = useRouter();
@@ -29,8 +31,9 @@ export default function Game() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-  const board = useBoard({ initialState: { result: -1, grid: [], isRunning: false } });
-  // const [result, setResult] = useState(-1);
+  const board = useBoard({
+    initialState: { result: -1, grid: [], isRunning: false, startTime: 0, endTime: 0 },
+  });
 
   const mutation = useMutation({
     mutationKey: ["new-game"],
@@ -71,12 +74,17 @@ export default function Game() {
 
   useEffect(() => {
     if (!data) return;
-    board.updateState({ grid: data.board, result: data.result, isRunning: false });
+    board.updateState({ ...data, grid: data.board });
   }, [data]);
 
   if (!data) {
     return <div>There is no game here</div>;
   }
+
+  const state = board.getState();
+  const startTime = state.startTime ? new Date(state.startTime).getTime() : 0;
+  const endTime = state.endTime ? new Date(state.endTime).getTime() : 0;
+  const time = endTime && startTime ? Math.round((endTime - startTime) / 1000) : undefined;
 
   return (
     <div className="panel bg-[#474E56] w-max" onContextMenu={handleContextMenu}>
@@ -88,18 +96,18 @@ export default function Game() {
           className="new-game-btn text-2xl px-2 py-1"
         >
           <span className="block">
-            {board.getState().result === 0 ?
+            {state.result === 0 ?
               "😵"
-            : board.getState().result === 1 ?
+            : state.result === 1 ?
               "🥳"
             : "😊"}
           </span>
         </button>
-        <Clock run={board.getState().isRunning} />
+        <Clock run={state.isRunning} time={time} />
       </div>
       <div className={"flex board w-max relative flex-col pointer-events-none"}>
         <BoardProvider board={board}>
-          {board.getState().grid.map((row: Array<number | string>, y) => {
+          {state.grid.map((row: Array<number | string>, y) => {
             return (
               <div key={y} className={"flex"}>
                 {row.map((col, x) => {
@@ -137,7 +145,7 @@ const boardContext = createContext<ReturnType<typeof useBoard>>({
   updateState: () => {},
   getRevealableNeighbors: () => [],
   getElementWithCoordinate: () => null,
-  getState: () => ({ grid: [], result: -1, isRunning: false }),
+  getState: () => ({ grid: [], result: -1, isRunning: false, startTime: 0, endTime: 0 }),
 });
 
 export function useCell() {

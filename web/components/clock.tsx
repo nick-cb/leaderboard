@@ -1,10 +1,12 @@
-'use client';
+"use client";
 
 import { animationInterval } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 
-export function Clock({ run }: { run: boolean }) {
+type ClockProps = { run: boolean; time?: number };
+export function Clock({ run, time }: ClockProps) {
   const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!run) {
       return;
@@ -30,7 +32,7 @@ export function Clock({ run }: { run: boolean }) {
     <div className={"clock-panel p-1 text-3xl font-bold bg-black select-none"}>
       <span className={"block absolute inset-1 text-[#400000]"}>000</span>
       <div ref={ref} className={"clock text-[#CC0100] relative"}>
-        000
+        {time ? time.toString().padStart(3, "0") : "000"}
       </div>
     </div>
   );
