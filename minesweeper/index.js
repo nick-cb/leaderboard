@@ -265,12 +265,10 @@ class MineSweeper {
     }
 
     const lastTile = revealedTiles.at(-1);
-    if (lastTile && lastTile.constant === 9 && lastTile.isRevealed) {
-      this.result = 0;
-    }
-
+    const loose = lastTile && lastTile.constant === 9 && lastTile.isRevealed;
     const win = this.revealedTileCount === this.rows * this.cols - this.mines;
-    if (win) this.result = 1;
+    if (loose) this.result = 0;
+    else if (win) this.result = 1;
 
     if (Date.now() - this.startTime > 999 * 1000) {
       this.result = 0;
