@@ -112,7 +112,7 @@ export function Cell(props: CellProps) {
   }
 
   function handleMouseLeave(event: React.MouseEvent<HTMLDivElement>) {
-    if (isRevealed || !isLeftClick(event)) {
+    if (isRevealed || value === "+" || !isLeftClick(event)) {
       return;
     }
     const coordinate = getTargetCoordinate(event.currentTarget);

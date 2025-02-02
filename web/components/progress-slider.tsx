@@ -107,8 +107,8 @@ export function ProgressSlider(props: ProgressSliderProps) {
     A: Change the cursor duration based on the time budget
     */
     const cursorMoveDuration = 200;
-    const mouseDownDuration = 50;
-    const mouseHoverDuration = 50;
+    const mouseDownDuration = 40;
+    const mouseHoverDuration = 20;
     console.log("start game from step", lastStep + 1);
 
     toggleCursorVisibility();
@@ -119,7 +119,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
 
     for (let i = lastStep + 1; i < actionLog.logs.length; i++) {
       const step = actionLog.logs[i];
-      console.log("step", i, step);
+      // console.log("step", i, step);
 
       if (step.action === "reveal") {
         board.togglePressVisual({ x: step.x, y: step.y });
