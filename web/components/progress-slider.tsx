@@ -57,6 +57,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
 
   function moveCursor({ x, y, speed, signal }: MoveCursoParams) {
     const cellElement = board.getElementWithCoordinate({ x, y });
+    console.log(cellElement, cursorRef.current, signal?.aborted);
     if (!cellElement || !cursorRef.current) return null;
     const left = cellElement.offsetLeft;
     const top = cellElement.offsetTop;
@@ -65,6 +66,7 @@ export function ProgressSlider(props: ProgressSliderProps) {
     if (signal?.aborted) {
       return null;
     }
+    console.log(left, top);
 
     return cursor.animate(
       [

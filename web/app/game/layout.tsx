@@ -20,7 +20,7 @@ export default function GameLayout({ children }: React.PropsWithChildren) {
   });
 
   return (
-    <div>
+    <div className={'flex flex-col items-center'}>
       <ul className="flex gap-4 text-blue-300 py-4">
         <li>Easy</li>
         <li className="font-bold text-white">Intermidiate</li>
